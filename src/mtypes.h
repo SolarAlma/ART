@@ -1,0 +1,84 @@
+#ifndef __MTYPES_H__
+#define __MTYPES_H__
+
+#include <string>
+#include <vector>
+#include "hdf5.h"
+#include "mpi.h"
+
+
+
+/* ---------------------------------------------------------------------------- */
+
+struct line{
+  char elem[8], label[15];
+  double Jup, Jlow, Gup, Glow;
+  double w0, nu0, width, eion;
+  double gf, e_low, e_up, amass;
+  double g_rad, g_str, g_vdw;
+  double b_sig, b_alp, b_vbar, b_gvw;
+  int anum, ion, firsttime, off;
+  // Zeeman splitting
+  int nZ;
+  std::vector<double> strength, splitting;
+  std::vector<int> iL;
+};
+typedef line line_t;
+
+
+/* ---------------------------------------------------------------------------- */
+
+struct region{
+  double w0, dw, cscal;
+  int nw, off;
+  std::vector<double> wav, nu;
+  std::vector<int> idx;
+  std::string inst, ifile;
+};
+typedef region region_t;
+
+/* ---------------------------------------------------------------------------- */
+
+struct h5model{
+  std::string filename;
+  std::vector<double> x, y, z;
+  int nx, ny, ndep, nt;
+  hid_t vid[13];
+  hid_t fid, did, mid;
+};
+
+/* ---------------------------------------------------------------------------- */
+
+struct h5prof{
+  std::string filename;
+  std::vector<double> x, y, z;
+  int nx, ny, ndep, nt;
+  hid_t vid[4];
+  hid_t fid, did, mid;
+};
+
+/* ---------------------------------------------------------------------------- */
+
+struct info{
+  int nx, ny, ndep, nt, nw, nstokes, solver, myrank, nproc, verbose, units;
+  double mu;
+  size_t ipix;
+  std::string hostname;
+  std::vector<bool> vdef;
+  std::vector<region> reg;
+  std::vector<line> lin;
+  h5model m;
+  h5prof p;
+  MPI_Comm comm;
+  MPI_Info info;
+  FILE *log;
+};
+
+/* ---------------------------------------------------------------------------- */
+
+
+
+
+/* ---------------------------------------------------------------------------- */
+
+#endif
