@@ -11,7 +11,7 @@ FC = mpif90
 INCLUDE = -I$(MDIR)/include
 LIBS =  -lstdc++  -L$(MDIR)/lib/ -lhdf5 -lhdf5_hl 
 
-OPT = -Ofast -xCORE-AVX-I 
+OPT = -Ofast -xCORE-AVX-I # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 optimization!!
 CPPFLAGS  = -std=c++11  $(OPT) $(INCLUDE)
 FFLAGS = $(OPT) # Do not use ffast-math with the EOS!
 
@@ -34,7 +34,7 @@ endif
 
 
 all: $(OFILES)
-	$(FC) $(FFLAGS) -o test.x *.o $(INCLUDE) $(LIBS) -nofor_main
+	$(FC) $(FFLAGS) -o RTma.x *.o $(INCLUDE) $(LIBS) -nofor_main
 
 
 clean:
