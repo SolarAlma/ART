@@ -1,0 +1,16 @@
+c      parameter (NDEF=317)
+      parameter (NDEF=33)
+      character*(SPCHAR) default(NDEF)
+      SAVE default
+      data default/
+     * 'H' ,'H+',
+     * 'He','He+','He++',
+     * 'C' ,'C+' ,'C++' ,
+     * 'N' ,'N+' ,'N++',
+     * 'O' ,'O+' ,'O++' ,
+     * 'Mg','Mg+','Mg++',
+     * 'Si','Si+','Si++',
+     * 'Ca','Ca+','Ca++',
+     * 'Fe','Fe+','Fe++',
+     * 'H2','H2+',
+     * 'H-','C-','O-','Si-','Cl-'/
