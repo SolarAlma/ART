@@ -90,6 +90,10 @@ double clte::air2vac(double lambda_air)
 
 /* ---------------------------------------------------------------------------- */
 
+
+
+/* ---------------------------------------------------------------------------- */
+
 void clte::delobez3_int(int ndep, double *z, double *op, double *sf, double &syn, double mu)
 {
   
@@ -137,24 +141,26 @@ void clte::delobez3_int(int ndep, double *z, double *op, double *sf, double &syn
     oder = der;
     
     
-    if(itau <= 1.E-4) k0 = k;
+    if(itau <= 1.E-5) k0 = k;
     if(itau <= 100.0) k1 = k;
   }
   
   /* --- did we reach the lower boundary ? Bezier2 wih a single control point --- */
-  
-  dtau[ndep-1] = fabs(dzu) * ( (op[ndep-2] + oder/3.0 * dzu) + op[ndep-1]
+  /*
+  if(k1 == (ndep-2)){
+    k1 = ndep-1;
+    dtau[ndep-1] = fabs(dzu) * ( (op[ndep-2] + oder/3.0 * dzu) + op[ndep-1]
 				 + op[ndep-2]) / 3.0 * mu;
-  tau[ndep-1] = tau[ndep-1] + dtau[ndep-1];
-  if(k1 == (ndep-2)) k1 = ndep-1;
-  
+    tau[ndep-1] = tau[ndep-1] + dtau[ndep-1];
+  }
+  */
   
   /* --- Init the intensity with the value of the source function at the lowest point --- */
   
-  syn = sf[k1];
   double *dsf = new double [ndep];
   cent_der<double>(ndep, tau, sf, dsf);
-  
+  syn = sf[k1+1] - (sf[k1] - sf[k1+1]) / dtau[k1];
+
   
   
   /* --- Integrate ray --- */
