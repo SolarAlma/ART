@@ -58,8 +58,7 @@ void processData(info &inp)
   
   /* --- loop pixels and synthesize --- */
 
-  size_t npix = inp.nx * inp.ny * inp.nt, step = inp.nproc,
-    i0 = inp.myrank, per=0, oper = -1;
+  size_t npix = inp.nx * inp.ny * inp.nt, step = inp.nproc, i0 = inp.myrank, per = 0, oper = 0;
   mdepth m(inp.ndep, true);
 
   
@@ -93,7 +92,7 @@ void processData(info &inp)
     per = ipix*100./(std::max(npix-1.0,1.0));
     if(oper != per){
       oper = per;
-      if(master) fprintf(stderr,"\rinfo: processing %d%s", per, "%");
+      if(master) fprintf(stderr,"\rinfo: processing %d%s", int(per), "%");
     }
   }
   if(master) fprintf(stderr,"\rinfo: processing %d%s\n", 100, "%");
@@ -114,7 +113,7 @@ int main(int narg, char *argv[])
 {
 
   info inp = {};
-  int  hlen = 0, status = 0;
+  int  hlen = 0;
   char hostname[MPI_MAX_PROCESSOR_NAME];
   MPI_Init(&narg, &argv);
   inp.comm = MPI_COMM_WORLD;
