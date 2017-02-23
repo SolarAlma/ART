@@ -1,5 +1,10 @@
 # Setup for Linux machine with Intel(R) Xeon(R) CPU E5-2695 v2 @ 2.40GHz (AVX)
 
+# Testes with:
+#
+# Loaded Modulefiles:
+#   1) Intel_composer_xe/2017/0.098   2) openmpi/Intel/1.10.4
+
 HDF5_DIR  = /mn/stornext/u3/mikolajs/SrcModules/hdf5-1.10.0-patch1
 
 CXX       = mpicxx
