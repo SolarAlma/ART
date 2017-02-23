@@ -1,0 +1,19 @@
+# Setup for MacBook Pro with OsX Sierra + PGI 16.0.1 compilers with build in MPICH 
+
+HDF5_DIR  = /Users/mikolajs/SrcModules/hdf5-1.10.0-patch1
+
+CXX       = pgc++
+FC        = pgfortran
+
+MPI_CXX   = mpic++
+MPI_FC    = mpif90
+
+RTINCLUDE = -I$(HDF5_DIR)/include
+
+OPTFLAGS  =  
+F90FLAGS  = 
+CXXFLAGS  = $(OPTFLAGS) -std=c++11
+
+LDFLAGS   = -L$(HDF5_DIR)/lib/ -lhdf5 -lhdf5_hl -lz -lsz -pgc++libs -Mnomain
+DEBUG	    =
+

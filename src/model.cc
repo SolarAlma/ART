@@ -116,7 +116,7 @@ void modl::mdepth::fillDensities(info &inp, ceos &eos){
   double otau=0, tau=0, kappa, kappa_old, na, ne;
   vector<float> frac;
   double lambda = 5000.0, scatt = 0;
-  float xna, xne;
+  float xna;
   
   for(size_t kk=0; kk<ndep; kk++){
     

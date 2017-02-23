@@ -1,0 +1,16 @@
+HDF5_DIR  = /home/jaime/local/parallel_hdf5/
+
+CXX       = mpicxx
+FC        = mpif90
+
+MPI_CXX   = mpicxx
+MPI_FC    = mpif90
+
+RTINCLUDE = -I$(HDF5_DIR)/include
+
+OPTFLAGS  = -Ofast -xCORE-AVX-I # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
+F90FLAGS  = -O3 -xCORE-AVX-I -fp-model source
+CXXFLAGS  = $(OPTFLAGS) -std=c++11
+
+LDFLAGS   = -lstdc++  -L$(HDF5_DIR)/lib/ -lhdf5 -lhdf5_hl -nofor_main
+DEBUG	    =
