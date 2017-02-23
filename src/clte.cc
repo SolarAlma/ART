@@ -161,9 +161,8 @@ void clte::delobez3_int(int ndep, double *z, double *op, double *sf, double &syn
  
   for(size_t k = k1-1; k >= k0; k--){
     
-    int ku = k + 1, kd = k-1;
-    
-    
+    int ku = k + 1;
+
     /* --- Integration coeffs. and exponential --- */
     
     double dt = dtau[ku];
