@@ -20,17 +20,17 @@ endif
 
 ### filling missing parts
 
-MPI_CXX  ?= mpic++
-MPI_FC   ?= mpif90
-HDF5_DIR ?=
-INCLUDE  ?=
-OPTFLAGS ?= -02
-F90FLAGS ?= $(OPTFLAGS)
-CXXFLAGS ?= $(OPTFLAGS) -std=c++11 
-LDFLAGS  ?= -lhdf5 -lhdf5_hl -lz 
-DEBUG    ?=
+MPI_CXX   ?= mpic++
+MPI_FC    ?= mpif90
+HDF5_DIR  ?=
+RTINCLUDE ?=
+OPTFLAGS  ?= -O2
+F90FLAGS  ?= $(OPTFLAGS)
+CXXFLAGS  ?= $(OPTFLAGS) -std=c++11 
+LDFLAGS   ?= -lhdf5 -lhdf5_hl -lz 
+DEBUG     ?=
 
-INFO     += compiler
+INFO      += compiler
 
 ### define object files list
 
@@ -44,10 +44,10 @@ OFILES = eos_math_special.o eos_eqns.o eos.o cop.o ceos.o model.o io.o clte.o ma
 .f.o:
 	$(MPI_FC) $(F90FLAGS) $(DEBUG) -c $< -o $@
 .cc.o:
-	$(MPI_CXX) $(CXXFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+	$(MPI_CXX) $(CXXFLAGS) $(DEBUG) $(RTINCLUDE) -c $< -o $@
 
 compile: $(INFO) $(OFILES)
-	$(MPI_FC) $(F90FLAGS) $(INCLUDE) -o RTma.x *.o $(LDFLAGS)
+	$(MPI_FC) $(F90FLAGS) $(RTINCLUDE) -o RTma.x *.o $(LDFLAGS)
 
 clean:
 	rm -f *.o *.mod
@@ -62,16 +62,14 @@ machine_info:
 no_machine:
 	@echo "[!] There is no specific makefile for this machine"
 	@echo "[!] Trying with default setup"
-	@echo $(MACHINEEXISTS)
-	@echo $(MACHINEMAKE)
-	@echo $(findstring $(MACHINE),$(MACHINEEXISTS))
+	@echo
 
 
 compiler:
 	@echo " MPI_CXX      = " $(MPI_CXX)
 	@echo " MPI_FC       = " $(MPI_FC)
 	@echo " HDF5_DIR     = " $(HDF5_DIR)	
-	@echo " INCLUDE      = " $(INCLUDE)
+	@echo " RTINCLUDE    = " $(RTINCLUDE)
 	@echo " OPTFLAGS     = " $(OPTFLAGS)
 	@echo " F90FLAGS     = " $(F90FLAGS)
 	@echo " CXXFLAGS     = " $(CXXFLAGS)
