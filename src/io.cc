@@ -113,7 +113,6 @@ void readInput(string filename, info &input, bool verbose)
       else if(key == "region"){
 	std::vector<std::string> param = strsplit(field,",");
 	region reg = {};
-	std::string::size_type sz = 0;    
 	reg.w0 = std::stod(param[0]); // convert to vacuum;
 	reg.dw = std::stod(param[1]);
 	reg.nw = std::stoi(param[2]);
@@ -145,24 +144,20 @@ void readInput(string filename, info &input, bool verbose)
 
 bool bfile_exists(const std::string& name) {
   std::ifstream f(name.c_str(),std::ifstream::in);
-    if (f.good()) {
-      f.close();
-      return true;
-    } else {
-      f.close();
-     return false;
-    }
+  f.close();
+  return f.good() ? true : false;
 }
 
 /* ---------------------------------------------------------------------------- */
 
-bool bdir_exists( std::string name){
+bool bdir_exists(std::string name){
   DIR* dir = opendir(name.c_str());
   if (dir) return true;
   else if (ENOENT == errno) return false;
   else{
     fprintf(stderr,"error: bdir_exists: cannot write to folder [%s], exiting.\n", name.c_str());
     MPI_Abort(MPI_COMM_WORLD, 2);
+    return true; // Just ensure function will return a value
   }
 }
 
@@ -184,8 +179,7 @@ void initReadIO(info &inp)
 {
 
   const char routineName[] = "initReadIO";
-  int ierror, has_B;
-  hid_t plist_id, ncid;
+  hid_t plist_id;
 
   
   /* --- Does input model exist ? --- */
@@ -238,8 +232,6 @@ void initReadIO(info &inp)
 
   
   /* --- Init variable IDs --- */
-
-  bool isz = false, istau = false;
   
   if((H5LTget_attribute_int(inp.m.fid, "/", "units", &inp.units)) < 0) inp.units = 0;
   inp.vdef.resize(13,false);
@@ -309,7 +301,7 @@ void readAtmosTYX(size_t tt, size_t yy, size_t xx, mdepth &m, info &inp)
     if(inp.vdef[ii])
       readPix(inp.m.vid[ii], inp.m.mid, inp.m.did, &m.buf(ii,0), inp.log);
   }
-  if(inp.verbose >= 2) fprintf(inp.log, "info: read nt=%4d, ny=%4d, nx=%4d\n", tt, yy, xx);
+  if(inp.verbose >= 2) fprintf(inp.log, "info: read nt=%4zu, ny=%4zu, nx=%4zu\n", tt, yy, xx);
   
 }
 
@@ -339,7 +331,7 @@ void writeProfileTYX(size_t tt, size_t yy, size_t xx, double *sp, info &inp)
 
 void initWriteIO(info &inp, double *lambda)
 {
-  hid_t plist, dspace;
+  hid_t plist;
   const char routineName[] = "initWriteIO";
 
 
