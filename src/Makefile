@@ -1,41 +1,80 @@
-ARCH     = $(shell uname -m)
-ARCHF    = $(shell uname -a)
+### find machine config file
 
-MDIR = /home/jaime/local/parallel_hdf5/
-OMPI_CXX = icpc
-OMPI_FC = ifort
+OPSYS        ?= $(shell uname -s)
+MACHINE      ?= $(shell uname -n)
+ARCHF        ?= $(shell uname -a)
+MACHINEMAKE   = machines/$(MACHINE)
+MACHINEEXISTS = $(shell ls machines)
+INFO          = machine_info
 
-CXX = mpicxx
-FC = mpif90
-
-INCLUDE = -I$(MDIR)/include
-LIBS =  -lstdc++  -L$(MDIR)/lib/ -lhdf5 -lhdf5_hl 
-
-OPT = -Ofast -xCORE-AVX-I # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 optimization!!
-CPPFLAGS  = -std=c++11  $(OPT) $(INCLUDE)
-FFLAGS = $(OPT) # Do not use ffast-math with the EOS!
-
-OFILES = eos_math_special.o eos_eqns.o eos.o cop.o ceos.o model.o io.o clte.o main.o
+ifeq ("$(findstring $(MACHINE),$(MACHINEEXISTS))","")
+	INFO      += no_machine
+else
+	include $(MACHINEMAKE)
+endif
 
 ifneq (,$(findstring Darwin,$(ARCHF))) #
   MACOSX_DEPLOYMENT_TARGET=10.6
   export MACOSX_DEPLOYMENT_TARGET
+endif
 
-endif 
+### filling missing parts
 
+MPI_CXX  ?= mpic++
+MPI_FC   ?= mpif90
+HDF5_DIR ?=
+INCLUDE  ?=
+OPTFLAGS ?= -02
+F90FLAGS ?= $(OPTFLAGS)
+CXXFLAGS ?= $(OPTFLAGS) -std=c++11 
+LDFLAGS  ?= -lhdf5 -lhdf5_hl -lz 
+DEBUG    ?=
 
-.SUFFIXES: .o .f90 .cc
+INFO     += compiler
 
-%.o: %.cc *.h
-	$(CXX) $(CPPFLAGS) -c  $< -o $@
+### define object files list
 
-%.o: %.f90
-	$(FC) $(FFLAGS) -c  $< -o $@
+OFILES = eos_math_special.o eos_eqns.o eos.o cop.o ceos.o model.o io.o clte.o main.o
 
+### compilation
 
-all: $(OFILES)
-	$(FC) $(FFLAGS) -o RTma.x *.o $(INCLUDE) $(LIBS) -nofor_main
+.SUFFIXES: .cc .f .o
+.PHONY: clean
 
+.f.o:
+	$(MPI_FC) $(F90FLAGS) $(DEBUG) -c $< -o $@
+.cc.o:
+	$(MPI_CXX) $(CXXFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+compile: $(INFO) $(OFILES)
+	$(MPI_FC) $(F90FLAGS) $(INCLUDE) -o RTma.x *.o $(LDFLAGS)
 
 clean:
 	rm -f *.o *.mod
+
+Default: compile
+
+machine_info:
+	@echo
+	@echo "### Machine name: $(MACHINE) "
+	@echo
+
+no_machine:
+	@echo "[!] There is no specific makefile for this machine"
+	@echo "[!] Trying with default setup"
+	@echo $(MACHINEEXISTS)
+	@echo $(MACHINEMAKE)
+	@echo $(findstring $(MACHINE),$(MACHINEEXISTS))
+
+
+compiler:
+	@echo " MPI_CXX      = " $(MPI_CXX)
+	@echo " MPI_FC       = " $(MPI_FC)
+	@echo " HDF5_DIR     = " $(HDF5_DIR)	
+	@echo " INCLUDE      = " $(INCLUDE)
+	@echo " OPTFLAGS     = " $(OPTFLAGS)
+	@echo " F90FLAGS     = " $(F90FLAGS)
+	@echo " CXXFLAGS     = " $(CXXFLAGS)
+	@echo " LDFLAGS      = " $(LDFLAGS)
+	@echo " DEBUG        = " $(DEBUG)
+	@echo
