@@ -41,6 +41,8 @@ With the current numbers, a typical PRACE allocation will only allow for 2 ALMA 
 ## 1. Summary of the project 
 (To be published in the PRACE website. Maximum 500 words)
 
+The Atacama Large Millimeter/submillimeter Array (ALMA), which is currently the worlds' largest astronomical observatory, opened up a new window on the universe. Already within the first few years of operation ALMA led to many scientific discoveries. Since December 2016, ALMA is also used for observations of our Sun. It observes the Sun at a spatial resolution, which is unprecedented in this wavelength range, and offers novel means of determining the properties of the plasma in the Sun's outer atmospheric layers. These new diagnostic capabilities, which will ultimately progress our understanding of the Sun, still need to be developed and understood further in order to fully exploit their potential. Detailed numerical simulations of the solar atmosphere and artificial observations of it play a key role in this respect. 
+
 ## 2. Scientific case of the project
 Explain the scientific case for which you intend to use the code(s). Maximum 500 words.
 
