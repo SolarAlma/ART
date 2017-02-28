@@ -63,7 +63,7 @@ Among other things, we plan to address the following points with the anticipated
 Finally, it should be noted that the same tools can be applied to models of other stars, too. 
 
 ## 3. Computer resources requested  (for Types A, B, C), or expected for Type D
-The input for our code are 3D stellar atmosphere models (mainly those generated with the Bifrost code), which are set of 3D arrays of floats (most of the time in a single precision). For a typical size of Bifrost model this accounts for 768^3 * 6 * 64bits = ~ 22GB for one snapshot. The output, in extreme cases will be of the same order. Thus in total we need at least 1TB of storage for input & output, to be able test our code with short time series with few snapshots.  
+The input for our radiative transfer (RT) code are 3D solar/stellar atmosphere models (mainly those generated with the Bifrost code), which are sets of 3D arrays of floats for typically 6 primary physical variables (most of the time in single precision). For a typical Bifrost model, the size of the input accounts to 768^3 * 6 * 64bits = ~ 22GB for one snapshot. The RT output, in extreme cases will be of the same order. Thus in total we need at least 1TB of storage for input & output, to be able test our code with short time series with a few snapshots.  
 	
 Total storage required (Gbyte) : 1014 (1TB)  
 Maximum amount of memory per core (Mbyte)	**~0.5GB**
@@ -73,23 +73,20 @@ Maximum amount of memory per core (Mbyte)	**~0.5GB**
 	Name and version:  **RTam** 
 	         Webpage:  **none**
 
-It is currently an alpha version without license assigned but we plane to release it under GPL or MIT license.
+It is currently an alpha version without license assigned but we plan to release it under GPL or MIT license.
 
 ## 5. Describe the main algorithms and how they have been implemented and parallelized  
 
-At the core of computation is a nonlinear solver for Radiative Transfer which requires the solution of the polarized radiative transfer problem, which involves the solution of a set of coupled high-order linear differential equations, one for each Stokes parameter.
+At the core of computation is a nonlinear solver for radiative transfer (RT), which requires the solution of the (polarized) radiative transfer problem. This problem involves the solution of a set of coupled first-order linear differential equations, one for each Stokes parameter.
 
-Given that each column in atmosphere model is a completely independent calculation, the problem lends itself very well to parallel computing. A very
-limited amount of communication is necessary between different processes. The code has been parallelized using MPI. The total number of columns to be calculated
-(tasks) is divided by the number of processes, so the amount of tasks each process has is about the same and is known in the beginning of the execution. Each process starts working
-through its task list until it is finished, and then writes the output to the disk and waits for the other processes to complete.
+Given that each column in the atmosphere model is a completely independent calculation, the problem is very suitable for parallel computing. A very limited amount of communication is necessary between different processes. The code has been parallelized using MPI. The total number of columns to be calculated (tasks) is divided by the number of processes, so that the amount of tasks each process has is about the same and is known in the beginning of the execution. Each process starts working through its task list until it is finished, and then writes the output to the disk and waits for the other processes to complete.
 
 ## 6. Current and target performance  (for Types A, B, C, D ; including the points below. Maximum 250 words)
-The code is naively parallel but it is very computationally demanding. It scales with ease up to 512 cores but it has not been tested with higher number of CPUs. We believe that better performance can be achieved with hybrid approach (OpenMP/MPI) or with use of accelerators like Intel Xeon Phi or GPGPU. 
+The code is naively parallel but it is very computationally demanding. It scales with ease up to 512 cores but it has not been tested yet  with a higher number of CPUs. We believe that better performance can be achieved with a hybrid approach (OpenMP/MPI) or by using accelerators like Intel Xeon Phi or GPGPU. 
 	
 What is the target for scalability and performance? (i.e. what performance is needed to reach the envisaged scientific goals) 
 
-While the scalability shouldn't be a problem we would need a speed up by a factor of ideally 4 to be able ... 
+While the scalability shouldn't be a problem we would need a speed up by a factor of ideally 4 to be able generate the artificial observations for ALMA as described above (item 2). 
 
 ## 7. Confidentiality  (for Types A, B, C, D)
 Is any part of the project covered by confidentiality?    No
@@ -97,18 +94,18 @@ Is any part of the project covered by confidentiality?    No
 ## 8. Describe the I/O strategy regarding the parameters indicated below  (for Types A, B, C, D)
 a) Is I/O expected to be a bottleneck? (Maximum 50 words) 
 Although the input and output is very volumetric, the time spend on I/O operations is negligible when compared to the computation time. 
-b) Implementation: I/O libraries, MPI I/O, netcdf, HDF5 or other approaches. (Maximum 50 words) We use for I/O parallel HDF5 library.
-c) Frequency and size of data output and input (Maximum 50 words) Input read only at the beginning (~25GB for snapshot),  output save only at the end of computation (~20GB for each snapshot)
-d) Number of files and size of each file in a typical production run (Maximum 50 words) 1 hdf5 file (~25GB -> xTB) for input and 1 for output (~20GB -> xTB). 
+b) Implementation: I/O libraries, MPI I/O, netcdf, HDF5 or other approaches. (Maximum 50 words) We use the parallel HDF5 library for I/O.
+c) Frequency and size of data output and input (Maximum 50 words) Input read only at the beginning (~25GB for snapshot),  output saved only at the end of computation (~20GB for each snapshot)
+d) Number of files and size of each file in a typical production run (Maximum 50 words) 1 hdf5 file (~25GB -> xTB) for input and 1 for output (~20GB -> xTB). The code can process time series a model snapshots sequentially. The large production run mentioned under item 2 would thus result in 1800 I/O files (one at a time).  
 
 ## 9. Main performance bottlenecks  (for Types B, C, D. Maximum 250 words)
-Currently the slowest part is an EOS (Equation of State) module which strongly depend on expensive calculation of integrals of exponential functions.
+Currently the slowest part is the EOS (Equation of State) module which strongly depends on expensive calculation of integrals of exponential functions.
 
 ## 10. Describe possible solutions you have considered to improve the performance of the project   
 	(for Types B, C, D. Maximum 250 words)
-The major improvement would require changes in the algorithm. We believe that using interpolation tables instead of the explicit calculations of integrals of exponential functions would speed up the code substantially keeping reasonable precision of the solution.  
+The major improvement would require changes in the algorithm. We believe that using interpolation tables for the equation of state instead of the explicit calculations of integrals of exponential functions would speed up the code substantially keeping reasonable precision of the solution.  
 
-he code hasn't been optimized so far for better vectorization, thus in depth performance analysis is needed with fine tuning (loop by loop) for better SIMD usage. We also believe that our code should be easy to accelerate on Xeon Phi (KNL) or/and GPGPU.  
+The code hasn't been optimized so far for better vectorization, thus in depth performance analysis is needed with fine tuning (loop by loop) for better SIMD usage. We also believe that our code should be easy to accelerate on Xeon Phi (KNL) or/and GPGPU.  
 
 Adding OpenMP should also reduce memory overhead and would improve scalability. 
 
