@@ -63,7 +63,7 @@ Among other things, we plan to address the following points with the anticipated
 Finally, it should be noted that the same tools can be applied to models of other stars, too. 
 
 ## 3. Computer resources requested  (for Types A, B, C), or expected for Type D
-The input for RTma code are 3D stellar atmosphere models (mainly those generate with Bifrost code), which are set of 3D arrays of floats (typically in single precision). For a typical size of Bifrost model this accounts for 768^3 * 6 * 64bits = ~ 22GB for one snapshot. The output in extreme cases will be of the same order. Thus in total we need at least 1TB of storage for input & output to be able test our code with short time series with few snapshots.  
+The input for our code are 3D stellar atmosphere models (mainly those generated with the Bifrost code), which are set of 3D arrays of floats (most of the time in a single precision). For a typical size of Bifrost model this accounts for 768^3 * 6 * 64bits = ~ 22GB for one snapshot. The output, in extreme cases will be of the same order. Thus in total we need at least 1TB of storage for input & output, to be able test our code with short time series with few snapshots.  
 	
 Total storage required (Gbyte) : 1014 (1TB)  
 Maximum amount of memory per core (Mbyte)	**~0.5GB**
