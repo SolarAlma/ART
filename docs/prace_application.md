@@ -126,9 +126,19 @@ Performance estimate for/on Intel Xeon Phi KNL
 	* Is the code widely used?
 
 	* Would the code be used only within this original research project?
-	* Would the code be used for other similar research projects with minor modifications?
+No. Many applications are possible and foreseen, not only for modelling of the Sun but also other stars. 
+
+* Would the code be used for other similar research projects with minor modifications?
+	
+Yes, as part of the ongoing SolarALMA project, stellar simulations and also in collaboration with external international collaborators.  	
+	
 	* Would the code be used in many research projects of the research field indicated in the proposal?
+	
+	Yes. We intend to make the code available for a large user base, in particular for the Solar Simulations for the Atacama Large Millimeter Observatory Network (SSALMON), which hosted and organized by our group. It currently involves 86 scientists from around the world.  
+	
 	* Would the modification be easy to add to the main release of the software?
+	Yes. 
+	
 
 ## 14. Describe the request plans for work with support from PRACE experts  (for Type C, D)
 	
@@ -145,7 +155,7 @@ Performance estimate for/on Intel Xeon Phi KNL
 
 ## 15. Please describe your hardware architecture currently in use to allow an optimal selection of a feasible Tier-1 system  (for Type D only, Maximum 250 words)
 	 We regularly run our codes on multi-core, Intel Xeon, 64GB/compute node
-	 Some of then are equipped with Infiniband
-	 We are planning on buying small cluster with GPU (2x Nvidia p100) and Xeon KNL, thus system where we could test it beforehand would be appreciated. 
+	 Some of them are equipped with Infiniband. 
+	 We are planning on buying a small cluster with GPU (2x Nvidia p100) and Xeon KNL. Access to a similar system where we could test the adapted/optimized code beforehand would therefore be appreciated. 
 
  
