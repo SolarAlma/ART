@@ -41,6 +41,9 @@ With the current numbers, a typical PRACE allocation will only allow for 2 ALMA 
 ## 1. Summary of the project 
 (To be published in the PRACE website. Maximum 500 words)
 
+**Version below has 488 words.**
+
+
 The Atacama Large Millimeter/submillimeter Array (ALMA), which is currently the world's largest astronomical observatory, opened up a new window on the universe. The interferometric array is located on the Chajnantor plateau in the Chilean Andes at an altitude of 5000 m and consists of 66 antennas, most of them with a diameter of 12 m. By combining the antennae, they act like a giant telescope with baselines of up to 16 km. Already within the first few years of operation, ALMA led to many scientific discoveries. Since December 2016, ALMA is also used for observations of our Sun. It observes the Sun at a spatial resolution, which is unprecedented in this wavelength range, and offers novel means of determining the properties of the plasma in the Sun's outer atmospheric layers. Due to the properties of the solar radiation at millimeter wavelengths, ALMA serves as a linear thermometer, mapping narrow layers at different heights. It can measure the thermal structure and dynamics of the solar atmosphere and thus sources and sinks of atmospheric heating.
 
 Among other expected scientific results, ALMA promises significant steps towards understanding the intricate dynamics and physical processes that, in combination, might yield the solution of the coronal heating problem - a long standing fundamental question in modern astrophysics. However, ALMA's novel diagnostic capabilities, which will ultimately progress our understanding of the Sun, still need to be developed and understood further in order to fully exploit their potential. Detailed numerical simulations of the solar atmosphere and artificial observations of the Sun play a key role in this respect. 
@@ -51,7 +54,9 @@ Such artificial observations of the Sun will be produced as part of the SolarALM
 
 ## 2. Scientific case of the project
 Explain the scientific case for which you intend to use the code(s). Maximum 500 words.
-**Version below at 553 words. Needs to be cut.**
+
+**Version below has 500 words.**
+
 
 In order to understand the diagnostic potential of the Atacama Large Millimeter/submillimeter Array (ALMA) for observations of the Sun, realistic models and corresponding artificial observations are needed. In summary, we would use a 3D model of the solar atmosphere as input for a radiative transfer (RT) code, and then apply ALMA's instrumental properties to the RT results. Changing the parameters of the last step (e.g., the temporal resolution of the observation) then allows for investigating the impact of the change on the artificial observations and the extent to which initially contained information can be recovered from the artificial observations. The fundamental strength of our approach is that we can compare the processed artificial observations with the original solar input model. Such comparisons directly reveal, which aspects of the input model can be recovered or not and what is needed to get the most out of the data. The resulting strategies can be applied directly to real ALMA observations of the Sun and yield the potential of greatly boosting ALMA's diagnostic potential, promising high-impact results. In particular, we plan to look for observational signatures of small-scale, intermittent events in the solar atmosphere such as, e.g., various oscillations and wave modes and nano-flares, which could contribute to the still not fully explained heating of the outer layers of our Sun. Finding such small-scale events demands maximizing the capabilities of ALMA's solar observing modes. This task can be substantially supported by the numerical simulations described here but requires detailed RT calculations, which currently do not exist.  
 
