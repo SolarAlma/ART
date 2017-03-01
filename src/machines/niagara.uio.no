@@ -1,5 +1,10 @@
 # Setup for Mac Pro (OsX) 
 
+ifneq (,$(findstring Darwin,$(ARCHF))) #
+  MACOSX_DEPLOYMENT_TARGET=10.10
+  export MACOSX_DEPLOYMENT_TARGET
+endif
+
 HDF5_DIR  = /mn/stornext/u3/svenwe/libs_dev/hdf5
 
 CXX       = mpicxx
