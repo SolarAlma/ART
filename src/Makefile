@@ -13,11 +13,6 @@ else
 	include $(MACHINEMAKE)
 endif
 
-ifneq (,$(findstring Darwin,$(ARCHF))) #
-  MACOSX_DEPLOYMENT_TARGET=10.6
-  export MACOSX_DEPLOYMENT_TARGET
-endif
-
 ### filling missing parts
 
 MPI_CXX   ?= mpic++
