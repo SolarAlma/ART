@@ -1,0 +1,18 @@
+# Setup for Mac Pro (OsX) 
+
+HDF5_DIR  = /mn/stornext/u3/svenwe/libs_dev/hdf5
+
+CXX       = mpicxx
+FC        = mpif90
+
+MPI_CXX   = mpicxx
+MPI_FC    = mpif90
+
+RTINCLUDE = -I$(HDF5_DIR)/include
+
+OPTFLAGS  = -O2
+F90FLAGS  = -O3 -xHost -fp-model source
+CXXFLAGS  = $(OPTFLAGS) -std=c++11 -stdlib=libc++
+
+LDFLAGS   = -lc++ -lstdc++ -L$(HDF5_DIR)/lib/ -lhdf5 -lhdf5_hl -nofor_main
+DEBUG	    =
