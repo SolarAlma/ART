@@ -58,13 +58,18 @@ std::vector<std::string> strsplit(std::string &var, std::string token, bool rmsp
 
 /* ---------------------------------------------------------------------------- */
 
-void readInput(string filename, info &input, bool verbose)
-{
+void readInput(string filename, info &input, bool verbose) {
 
   input.mu = 1.0, input.verbose = 1, input.nx=0, input.ny = 0, input.ndep = 0,
-    input.nw=0, input.nstokes = 0, input.solver = 0, input.ipix = 0, input.log = stderr;
+  input.nw = 0, input.nstokes = 0, input.solver = 0, input.ipix = 0, input.log = stderr;
   
   std::ifstream in(filename, std::ios::in | std::ios::binary);
+
+  if (not in.good()) {
+    std::cerr << "There is no input file: " << filename << std::endl;
+    MPI_Abort(MPI_COMM_WORLD, 2);
+  }
+
   if (in){
     std::string iline;
     while (std::getline(in, iline)) {
