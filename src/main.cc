@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <cstdio>
+#include <vector>
 #include <mpi.h>
 
 #include "cmemt2.h"
@@ -107,10 +108,18 @@ void processData(info &inp)
   
 }
 
+static void show_usage(std::string name) {
+  std::cerr << "\nUsage: " << name << " option(s):\n"
+            << "Options:\n"
+            << "\t-h,--help\t\tShow this help message\n"
+            << "\t-i,--input INPUT\tSpecify the input file\n"
+            << std::endl;
+}
+
 /* ---------------------------------------------------------------------------- */
 
-int main(int narg, char *argv[])
-{
+
+int main(int narg, char *argv[]) {
 
   info inp = {};
   int  hlen = 0;
@@ -126,12 +135,31 @@ int main(int narg, char *argv[])
   MPI_Comm_size(inp.comm, &inp.nproc);       // number of processors
   MPI_Get_processor_name(&hostname[0], &hlen); // Hostname
   inp.hostname = string(hostname);
-
-  
   
   /* --- Read input --- */
 
-  readInput("input.cfg", inp, ((inp.myrank == 0) ? true : false));
+  std::string input_file = "input.cfg";
+
+  if (narg < 2) {
+    if (inp.myrank == 0) std::cout << "Using default input file: " << input_file << std::endl;
+  } else {
+    for (size_t i = 0; i < narg; ++i) {
+      std::string arg = argv[i];
+      if ((arg == "-h") || (arg == "--help")) {
+        show_usage(argv[0]);
+      } else if ((arg == "-i") || (arg == "--input")) {
+        if (i + 1 < narg) { // make sure this is not a last argument
+          input_file = argv[++i];
+          if (inp.myrank == 0) std::cout << "Using input file: " << input_file << std::endl;
+        } else {
+          if (inp.myrank == 0) std::cerr << "-i,--input option requires one argument." << std::endl;
+          MPI_Abort(MPI_COMM_WORLD, 2);
+        }
+      }
+    }
+  }
+
+  readInput(input_file, inp, ((inp.myrank == 0) ? true : false));
   
 
   
@@ -146,8 +174,7 @@ int main(int narg, char *argv[])
   MPI_Barrier(MPI_COMM_WORLD); // Wait until all processors reach this point
   MPI_Finalize();
 
-  
-  
+
 }
 
 /* ---------------------------------------------------------------------------- */
