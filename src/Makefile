@@ -29,7 +29,8 @@ INFO      += compiler
 
 ### define object files list
 
-OFILES = eos_math_special.o eos_eqns.o eos.o cop.o ceos.o model.o io.o clte.o main.o
+OFILES = eos_math_special.o eos_eqns.o eos.o cop.o  eoswrap.o ceos.o witt.o model.o io.o clte.o main.o
+
 
 ### compilation
 
@@ -38,11 +39,15 @@ OFILES = eos_math_special.o eos_eqns.o eos.o cop.o ceos.o model.o io.o clte.o ma
 
 .f.o:
 	$(MPI_FC) $(F90FLAGS) $(DEBUG) -c $< -o $@
-.cc.o:
+
+%.o: %.cc *.h
 	$(MPI_CXX) $(CXXFLAGS) $(DEBUG) $(RTINCLUDE) -c $< -o $@
 
 compile: $(INFO) $(OFILES)
-	$(MPI_FC) $(F90FLAGS) $(RTINCLUDE) -o RTma.x *.o $(LDFLAGS)
+	$(MPI_FC) $(F90FLAGS) $(RTINCLUDE) -o RTma.x $(OFILES) $(LDFLAGS)
+
+test: $(INFO) $(TFILES)
+	$(MPI_FC) $(F90FLAGS) $(RTINCLUDE) -o test.x $(TFILES) $(LDFLAGS) 
 
 clean:
 	rm -f *.o *.mod

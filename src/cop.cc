@@ -706,9 +706,10 @@ void cop(double T, double TKEV, double TK, double HKT, double TLOG,
 
     A=AHYD+AHMIN+AH2P+AHE1+AHE2+AHEMIN+ACOOL+ALUKE+AHOT;
     B=SIGH+SIGHE+SIGEL+SIGH2;
-    
+
     OPACITY[iWL]=A+B;
-    SCATTER[iWL]=B; 
+
+    if(SCATTER) SCATTER[iWL]=B; 
   }
 
 }
