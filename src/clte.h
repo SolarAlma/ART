@@ -4,14 +4,14 @@
    Written by J. de la Cruz Rodriguez (ISP-SU 2016)
 
    NOTES: 
-   Unpolarized Bezier-3 solver for the time being.
-   
-   Requires ceos class to retrieve the partial densities of 
+   Unpolarized Bezier-3 and linear solvers for the time being.
+
+
+   Requires ceoswrap class to retrieve the partial densities of 
    background absorvers.
 
    
   -------------------------------------------------------------- */
-
 
 #ifndef __CLTE_H__
 #define __CLTE_H__
@@ -19,19 +19,17 @@
 #include <vector>
 #include "mtypes.h"
 #include "model.h"
-//#include "cprofiles2.h"
 #include "ceos.h"
-#include "cmemt2.h"
 
 class clte{
  private:
   size_t nreg, nlin, ndep;
-  std::vector<line> lin;
+  line *lin;
   std::vector<region> reg;
-  std::vector<double>  scatt, sf;
   std::vector<size_t> roff;
-  std::vector<float> part, frac;
-  mat<double> opac;
+  std::vector<float>  tau_eq_1_z;
+
+  bool lines;
  public:
   size_t nw;
   std::vector<double> lambda;
@@ -41,9 +39,11 @@ class clte{
   
   double vac2air(double alamb);
   double air2vac(double alamb);
-  void synth_cont(modl::mdepth &m, double *syn, ceos &eos, double mu = 1.0, int solver = 0);
-  void delobez3_int(int ndep, double *z, double *op, double *sf, double &syn, double mu);
-  double plank_nu(const double nu, const double temp);
+  void synth_nonpol(modl::mdepth &m, double *syn, eoswrap &eos, double mu, int solver = 0);
+
+  void delobez3_int(int ndep, double *z, double *op, double *sf, double &syn, double mu, float &tau_eq_1);
+  void linear_int(int ndep, double *z, double *op, double *sf, double &syn,double mu, float &tau_eq_1);
+  double lte_opac(double temp, double n_u, double gf, double elow, double nu0);
 };
 
 #endif

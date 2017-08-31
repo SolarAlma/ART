@@ -1,8 +1,12 @@
 #include "model.h"
 #include "cmemt2.h"
-#include "ceos.h"
 #include <cmath>
 #include "physical_consts.h"
+
+
+#include "eoswrap.h"
+#include "witt.h"
+#include "ceos.h"
 
 using namespace std;
 
@@ -106,85 +110,69 @@ void modl::mdepth::to_cgs()
   } else return; 
 }
 
+
 /* ---------------------------------------------------------------------------- */
 
-void modl::mdepth::fillDensities(info &inp, ceos &eos){
+void modl::mdepth::fillDensities(info &inp, eoswrap &eos){
 
   
   /* --- Some checks --- */
 
-  double otau=0, tau=0, kappa, kappa_old, na, ne;
+  double otau=0, tau=0, kappa, kappa_old, na, ne, Pe;
   vector<float> frac;
   double lambda = 5000.0, scatt = 0;
   float xna;
   
-  for(size_t kk=0; kk<ndep; kk++){
-    
+  /* --- Check for T-cut conditions --- */
+  
+  getTcut(inp);
+
+  
+  /* --- Fill densities --- */
+  
+  for(size_t kk=k0; kk<=k1; kk++){
+
     /* --- Fill densities using the EOS --- */
     
-    if(inp.vdef[10]){
-      if(!inp.vdef[12]) nne[kk] = eos.nne_from_T_Pg(temp[kk], pgas[kk], rho[kk]);
-      else                        eos.nne_from_T_Pg_nne(temp[kk], pgas[kk], pgas[kk], nne[kk]);
-      
-    }else if(inp.vdef[11]){ 
-      if(!inp.vdef[12])	nne[kk] = eos.nne_from_T_rho(temp[kk], pgas[kk], rho[kk]);
-      else                        eos.nne_from_T_rho_nne(temp[kk], pgas[kk], rho[kk], nne[kk]);
-    }else               rho[kk] = eos.rho_from_T_nne(temp[kk], pgas[kk], nne[kk]);
-
+    double tk = temp[kk] * phyc::BK;
     
-    /* --- Store partial pressures and partition densities to 
-       compute background opacities later --- */
-    
-    xna =  pgas[kk] / (temp[kk] * phyc::BK);
-    eos.store_partial_pressures((int)ndep, (int)kk, xna, (float)nne[kk]);
-
-    /* --- Compute z-scale if ltau500 is the input depth scale --- */
-    
-    if(inp.vdef[0] && !inp.vdef[1]){
-      tau  = pow(10.0, ltau[kk]);
-      na = pgas[kk] / (temp[kk] * phyc::BK);
-      ne = nne[kk];
-      
-      eos.contOpacity(temp[kk], 1,  &lambda, &kappa, &scatt, eos.fract, na, ne);
-      
-      if(kk == 0) {
-	z[0] = 0;
-      }else{
-	z[kk] = z[kk-1] - 2.0 * (tau-otau) / (kappa-kappa_old);
-      }
-      otau = tau;
-      kappa_old = kappa;
-    }
-
-    /* --- Compute ltau500 if Z is the input depth scale --- */
-    
-    if(inp.vdef[1] && !inp.vdef[0]){
-      na = pgas[kk] / (temp[kk] * phyc::BK);
-      ne = nne[kk];
-      eos.contOpacity(temp[kk], 1,  &lambda, &kappa, &scatt, eos.fract, na, ne);
-      
-      if(kk == 0){
-	tau  = 0.0;//;0.5 * kappa * (z[0] - z[1]);
-	ltau[kk] = log10(tau);
-      }else{
-	tau = otau + 0.5 * (kappa_old + kappa) * (z[kk-1] - z[kk]);
-        ltau[kk] = log10(tau);
-      }
-      
-      otau = tau;
-      kappa_old = kappa;
+    if(inp.vdef[10]){// Pgas 
+      if(!inp.vdef[12]) nne[kk] = eos.Pe_from_Pg(temp[kk], pgas[kk], NULL) / tk;
+      Pe = nne[kk] * tk; // nne is defined
+    }else if(inp.vdef[11]){  // rho
+      pgas[kk] = eos.Pg_from_Rho(temp[kk], rho[kk], Pe); // Pe is given as output
+      if(!inp.vdef[12]) nne[kk] = Pe / tk;
+      nne[kk] = Pe / tk;
+    }else if(inp.vdef[12]){ // only nne given ?
+      Pe = nne[kk] * tk;
+      pgas[kk] = eos.Pg_from_Pe(temp[kk], Pe, NULL);
     }
     
-  }// kk
+    eos.fill_Species_table((int)kk, (int)ndep, temp[kk], pgas[kk], Pe);
 
-  
-  /* --- check ltau at the upper layer --- */
-  
-  tau = pow(10.0, ltau[1]), otau = pow(10.0, ltau[2]);
-  if(inp.vdef[1] && !inp.vdef[0]) ltau[0] = log10(exp(2*log(tau)-log(otau)));
-	
+    /* --- Do we need to compute the z-scale from ltau500? --- */
+    
+    // if(!inp.vdef[1] && inp.vdef[0]){
+    //   na = (pgas[kk] - Pe) / tk, ne = nne[kk];
+    //   if(kk == 0) z[0] = 0.0;
+    //   else z[kk] = z[kk-1] - 2.0 * (tau-otau) / (kappa-kappa_old);
+    // }
+  }
+
   
 }
 
+/* ---------------------------------------------------------------------------- */
+
+void modl::mdepth::getTcut(info &inp)
+{
+  k0 = 0, k1 = ndep-1;
+  if(inp.temperature_cut < 0.0) return;
+  
+  for(int ii=0;ii<(ndep-2); ii++){
+    if(temp[ii] >= inp.temperature_cut) k0 = ii;
+    else break;
+  }
+}
 
 /* ---------------------------------------------------------------------------- */

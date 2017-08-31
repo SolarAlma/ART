@@ -20,7 +20,8 @@
 
 /* ---------------------------------------------------------------------------- */
 
-
+double air2vac(const double lambda_air);
+double vac2air(const double lambda_vac);
 void readInput(std::string filename, info &inp, bool verbose=true);
 std::vector<std::string> strsplit(std::string &var, std::string token, bool rmspaces = true);
 std::string removeSpaces(std::string input);
@@ -34,6 +35,7 @@ void closeModel(info &inp);
 void closeProfile(info &inp);
 void writeProfileTYX(size_t tt, size_t yy, size_t xx, double *sp, info &inp);
 void initWriteIO(info &inp, double *lambda);
+int readValdLines(std::string filename, info &input);
 
 
 #endif

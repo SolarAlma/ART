@@ -8,9 +8,18 @@
   intensity at a given number of wavelengths
 
 
+  Changelog:
+      2017-08-29, JdlCR: EOS is now a baseclass and there are 
+      two options "pisk" and "witt". Added support for VALD 
+      input.
+  
+
+
   TODO: the EOS is slow. It is probably an overkill for
   solar applications because it can handle complex molecules.
-  Shoould change it to Wittmann or similar.
+  Should change it to Wittmann or similar.
+
+  
   
 
   -------------------------------------------------------------- */
@@ -18,13 +27,16 @@
 #include <iostream>
 #include <cstdio>
 #include <mpi.h>
-
+//
 #include "cmemt2.h"
 #include "mtypes.h"
 #include "io.h"
 #include "model.h"
-#include "ceos.h"
 #include "clte.h"
+//
+#include "eoswrap.h"
+#include "witt.h"
+#include "ceos.h"
 
 using namespace std;
 using namespace modl;
@@ -41,9 +53,19 @@ void processData(info &inp)
 
 
   
-  /* --- Init EOS & solver --- */
+  /* --- Init EOS  --- */
 
-  ceos eos(inp.lin, 4.44);
+  eoswrap *EoS = NULL;
+  if(inp.eos_type == 0) EoS = new eos::witt(inp.lin, 0, NULL, inp.gravity);
+  else if(inp.eos_type == 1) EoS = new ceos(inp.lin, 0, NULL, inp.gravity);
+  else{
+    fprintf(inp.log,"main: ERROR, accepted values for eos_type are: [pisk] and [witt]\n");
+    exit(0);
+  }
+
+
+  /* --- Init Solver --- */
+  
   clte atmos(inp.reg, inp.lin);
   std::vector<double> synthetic;
   synthetic.resize(atmos.nw);
@@ -74,14 +96,15 @@ void processData(info &inp)
     /* --- read Atmos from file --- */
     
     readAtmosTYX(tt, yy, xx, m, inp);
-    m.fillDensities(inp, eos);
+    m.fillDensities(inp, *EoS);
 
     
     /* --- get spectrum --- */
 
-    atmos.synth_cont(m, &synthetic[0], eos, inp.mu, 0);
-
-
+    atmos.synth_nonpol(m, &synthetic[0], *EoS, inp.mu, 0);
+    
+    //exit(0);
+    
     /* --- Write to disk --- */
 
     writeProfileTYX(tt, yy, xx, &synthetic[0], inp);
@@ -132,7 +155,8 @@ int main(int narg, char *argv[])
   /* --- Read input --- */
 
   readInput("input.cfg", inp, ((inp.myrank == 0) ? true : false));
-  
+  if(inp.lines_file != "") readValdLines(inp.lines_file, inp);
+
 
   
   /* --- Do slave or master based on process number --- */

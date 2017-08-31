@@ -6,18 +6,30 @@
 #include "hdf5.h"
 #include "mpi.h"
 
+static const int nlevpf = 6;
 
+
+/* ---------------------------------------------------------------------------- */
+
+struct species{
+  int anum, ion, nLev;
+  double n_tot[nlevpf];
+  double pf[nlevpf];
+  double eion[nlevpf];
+};
 
 /* ---------------------------------------------------------------------------- */
 
 struct line{
   char elem[8], label[15];
   double Jup, Jlow, Gup, Glow;
-  double w0, nu0, width, eion;
+  double w0, nu0, width, eion, nu_min, nu_max;
   double gf, e_low, e_up, amass;
   double g_rad, g_str, g_vdw;
   double b_sig, b_alp, b_vbar, b_gvw;
-  int anum, ion, firsttime, off;
+  int anum, ion,off, idx;
+  bool barklem, firsttime;
+  
   // Zeeman splitting
   int nZ;
   std::vector<double> strength, splitting;
@@ -60,10 +72,11 @@ struct h5prof{
 /* ---------------------------------------------------------------------------- */
 
 struct info{
-  int nx, ny, ndep, nt, nw, nstokes, solver, myrank, nproc, verbose, units;
-  double mu;
+  int nx, ny, ndep, nt, nw, nstokes, solver, myrank, nproc, verbose, units, eos_type;
+  double mu, temperature_cut, gravity, dlam;
   size_t ipix;
   std::string hostname;
+  std::string lines_file;
   std::vector<bool> vdef;
   std::vector<region> reg;
   std::vector<line> lin;

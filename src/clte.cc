@@ -4,9 +4,10 @@
    Written by J. de la Cruz Rodriguez (ISP-SU 2016)
 
    NOTES: 
-   Unpolarized Bezier-3 solver for the time being.
-   
-   Requires ceos class to retrieve the partial densities of 
+   Unpolarized Bezier-3 and linear solvers for the time being.
+
+
+   Requires ceoswrap class to retrieve the partial densities of 
    background absorvers.
 
    
@@ -15,24 +16,24 @@
 #include <cmath>
 #include <cstdio>
 #include "clte.h"
-#include "cprofiles2.h"
+#include "cprofiles.h"
 #include "physical_consts.h"
 #include "mtypes.h"
 #include "interpol.h"
-#include "cmemt2.h"
+#include "eoswrap.h"
 
 using namespace std;
 using namespace modl;
 
-/* ---------------------------------------------------------------------------- */
+
 
 /* ---------------------------------------------------------------------------- */
 
 clte::clte(std::vector<region> &reg_in, std::vector<line> &lin_in)
 {
 
-  lin = lin_in, reg = reg_in;
-  nw = 0, ndep = 0, nreg = reg.size(), nlin = lin.size();
+  lin = &lin_in[0], reg = reg_in;
+  nw = 0, ndep = 0, nreg = reg.size(), nlin = lin_in.size();
   for(auto &it: reg) nw += it.nw;
 
   lambda.resize(nw);
@@ -48,18 +49,27 @@ clte::clte(std::vector<region> &reg_in, std::vector<line> &lin_in)
     it.nu.resize(it.nw);
 
     for(size_t ii=0; ii<it.nw; ii++){
-      it.wav[ii] = air2vac(it.w0 + it.dw*double(ii));
+      it.wav[ii] = air2vac(vac2air(it.w0) + it.dw*double(ii));
       it.nu[ii] = phyc::CC / (it.wav[ii] * 1.e-8);
       lambda[kk++] = vac2air(it.wav[ii]);
     }
     
   }
 
-  /* --- Add 500 nm to the wav array to compute the reference opacity --- */
+  /* --- allocate array to store z(tau=1) --- */
+
+  tau_eq_1_z.resize(nw, 0.0);
+
   
-  lambda.push_back(5000.);
-  scatt.resize(nw+1);
-}
+
+  lines = ((nlin > 0) ? true : false);
+  
+  /* --- Init Zeeman components --- */
+
+  if(lines)
+    for(size_t ii=0;ii<(size_t)nlin; ii++)
+      cprof::init_zeeman_components(lin_in[ii]);
+} 
 
 /* ---------------------------------------------------------------------------- */
 
@@ -88,196 +98,110 @@ double clte::air2vac(double lambda_air)
   return lambda_vacuum;
 }
 
-/* ---------------------------------------------------------------------------- */
-
-
-
-/* ---------------------------------------------------------------------------- */
-
-void clte::delobez3_int(int ndep, double *z, double *op, double *sf, double &syn, double mu)
-{
-  
-  double *dtau = new double [ndep](), itau = 0, *tau = new double [ndep](),
-    dzu =  z[1]-z[0], deu =  (op[1] - op[0])/dzu,
-    der = 0, oder = deu, dzd = 0, ded = 0;
-  int k0 = 1, k1 = ndep-1;
-  
-  /* --- Integrate opacity to get tau scale --- */
-  
-  for(size_t k=1; k<(ndep-1); k++){
-    size_t kd = k+1, ku = k-1;
-    
-    
-    /* --- Compute side derivatives --- */
-
-    dzd = z[kd] - z[k];
-    ded = (op[kd] - op[k]) / dzd;
-    
-    
-    /* --- Centered erivative of the opacity following Fritsch & Butland (1984) --- */
-    
-    if(deu*ded > 0.0){
-      double lambda = (1.0 + dzd / (dzd + dzu)) / 3.0;
-      der = (deu / (lambda * ded + (1.0 - lambda) * deu)) * ded;
-    } else der = 0.0;
-    
-    /* --- 
-       integrate opacity using cubic bezier splines
-       The Bezier3 integral should be:
-       dz * (op_0 + op_u + cntrl1 + cntr2) / 4 
-       --- */
-    
-    dtau[k] = fabs(dzu) * ((op[k] - der/3.0 * dzu) +
-			   (op[ku] + oder/3.0 * dzu) +
-			   op[k] + op[ku]) * 0.25 * mu;
-    itau += dtau[k];
-    tau[k] = tau[k-1] + dtau[k];
-
-
-    /* --- Store info --- */
-    
-    dzu  = dzd;
-    deu  = ded;
-    oder = der;
-    
-    
-    if(itau <= 1.E-5) k0 = k;
-    if(itau <= 100.0) k1 = k;
-  }
-  
-  /* --- did we reach the lower boundary ? Bezier2 wih a single control point --- */
-  /*
-  if(k1 == (ndep-2)){
-    k1 = ndep-1;
-    dtau[ndep-1] = fabs(dzu) * ( (op[ndep-2] + oder/3.0 * dzu) + op[ndep-1]
-				 + op[ndep-2]) / 3.0 * mu;
-    tau[ndep-1] = tau[ndep-1] + dtau[ndep-1];
-  }
-  */
-  
-  /* --- Init the intensity with the value of the source function at the lowest point --- */
-  
-  double *dsf = new double [ndep];
-  cent_der<double>(ndep, tau, sf, dsf);
-  syn = sf[k1+1] - (sf[k1] - sf[k1+1]) / dtau[k1];
-
-  
-  
-  /* --- Integrate ray --- */
- 
-  for(size_t k = k1-1; k >= k0; k--){
-    
-    int ku = k + 1;
-
-    /* --- Integration coeffs. and exponential --- */
-    
-    double dt = dtau[ku];
-    double dt2 = dt * dt;
-    double dt3 = dt2 * dt;
-    double dt03 = dt / 3.0;
-    double eps, alp, bet, gam, mu;
-    //
-    if(dt >= 1.e-2){
-      //
-      eps = exp(-dt);
-      //
-      alp = (-6.0 + 6.0 * dt - 3.0 * dt2 + dt3 + 6.0 * eps)        / dt3;
-      bet = (6.0 + (-6.0 - dt * (6.0 + dt * (3.0 + dt))) * eps)    / dt3;
-      gam = 3.0 * (6.0 + (-4.0 + dt)*dt - 2.0 * (3.0 + dt) * eps)  / dt3;
-      mu  = 3.0 * ( eps * (6.0 + dt2 + 4.0 * dt) + 2.0 * dt - 6.0) / dt3;
-    }else{ // Taylor expansion of the exponential
-      //
-      double dt4 = dt2 * dt2;
-      eps = 1.0 - dt + 0.5 * dt2 - dt3 / 6.0 + dt4 / 24.0;
-      //
-      alp = 0.25 * dt - 0.05 * dt2 + dt3 / 120.0 - dt4 / 840.0;
-      bet = 0.25 * dt - 0.20 * dt2 + dt3 / 12.0  - dt4 / 42.0; 
-      gam = 0.25 * dt - 0.10 * dt2 + dt3 * 0.025 - dt4 / 210.0; 
-      mu  = 0.25 * dt - 0.15 * dt2 + dt3 * 0.05  - dt4 / 84.0; 
-    }        
-    
-    /* --- integrate source function --- */
-
-    double c_u = sf[ku] - dt03 * dsf[ku];
-    double c_0 = sf[k]  + dt03 * dsf[k];
-    
-    syn = syn * eps + sf[k] * alp + sf[ku] * bet + c_0 * gam + c_u * mu;
-  }
-  
-  delete [] dsf;
-  delete [] tau;
-  delete [] dtau;
-  
- }
 
 /* ---------------------------------------------------------------------------- */    
 
-double clte::plank_nu(const double nu, const double temp){
-  
-    double c1 = (2.0 * phyc::HH * nu*nu*nu) / (phyc::CC*phyc::CC) ;
-    double x = phyc::HH * nu / (phyc::BK * temp);
+// -------------------------------------------------------------------------
+// LTE opacity, combination of Mihalas (1970), pag. 68 - Eq. 3.4 &
+// Rutten (2003) eq. 2.98, pag. 31
+// -------------------------------------------------------------------------
 
-    if(x < 80.0) return c1 / (exp(x) - 1.0);
-    else return         c1  * exp(-x);
-  }
+double clte::lte_opac(double temp, double n_u, double gf, double elow, double nu0){
+  static const double lte_const = phyc::PI*phyc::EE*phyc::EE/(phyc::ME*phyc::CC);
+  //
+  double tk = phyc::BK * temp;
+  return (lte_const * gf * n_u * exp(-elow / tk) * (1.0 - exp( -(phyc::HH * nu0) / tk)));
+}
 
 /* ---------------------------------------------------------------------------- */    
 
-void clte::synth_cont(mdepth &m, double *syn, ceos &eos, double mu, int solver)
+void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int solver)
 {
 
   /* --- Init vars --- */
   
   ndep = m.ndep;
-  memset(&scatt[0], 0, (nw+1)*sizeof(double));
-  double *psi = new double [m.ndep];
+  double *sf = new double [ndep], *opac = new double [ndep];
+  int k0 = m.k0, k1 = m.k1;
+
   
-  if(sf.size() != m.ndep){
-    sf.resize(m.ndep);
-    opac.rinit(nw+1, m.ndep);
-  }
-  opac.zero();
-  
-  
-  /* --- Loop depth --- */
-
-  float xna=0, xne=0;
-  for(size_t k = 0; k<ndep; k++){
-    
-    /* --- read partial pressures --- */
-    
-    eos.read_partial_pressures(k, frac, part, xna, xne);
-
-
-    
-    /* --- Compute cont. opacity for all wavelengths --- */
-
-    eos.contOpacity(m.temp[k], nw+1,  &lambda[0], &opac(k,0), &scatt[0], frac, xna, xne);
-	
-  }// k
-
-
   /* --- Now integrate emerging intensity for each wavelength --- */
 
   for(size_t ir=0; ir<nreg; ir++){
-    for(int w = 0; w< reg[ir].nw; w++){ // Loop lambda
-
-      /* --- Source function at that wavlength --- */
-
-      for(int k = 0; k<m.ndep; k++){
-	sf[k] = plank_nu(reg[ir].nu[w], m.temp[k]);
-	psi[k] = opac(k,w+reg[ir].off);
-      }
-
-    
-      /* --- Compute formal solution at this wavelength, select method --- */
-      // void delobez3_int(int ndep, double *z, double *op, double *sf, double &syn, double mu);
-
-      delobez3_int(m.ndep, m.z, psi, &sf[0], syn[w + reg[ir].off], mu);
+    for(int w = 0; w < reg[ir].nw; w++){ // Loop lambda
       
-    }
-  }
+      size_t idx = w + reg[ir].off;
+      double ilambda = lambda[idx], inu =  reg[ir].nu[w];
 
-  delete [] psi;
+      for(int kk = k0; kk<=k1; kk++){
+
+	
+	/* --- Get background opacity --- */
+	
+	eos.contOpacity(m.temp[kk], m.nne[kk], kk, 1, &ilambda, &opac[kk]);
+	
+	
+	/* --- Planck function --- */
+
+	sf[kk] = cprof::planck_nu<double>(inu, m.temp[kk]);
+
+	
+	/* --- Compute line opacities if needed --- */
+	
+	if(lines){
+
+	  /*--- neutral Hydrogen and neutral Helium for Barklem's van der Waals broadening --- */
+	  
+	  double nH1 =  eos.spectab[kk][0].n_tot[0] * eos.spectab[kk][0].pf[0];
+	  double nHe1 = eos.spectab[kk][1].n_tot[0] * eos.spectab[kk][1].pf[0];
+
+	  
+	  /* --- Cycle each line and sum the opacity contribution --- */
+	  
+	  for(size_t ii = 0; ii<nlin; ii++){
+	    
+	    line &li = lin[ii];
+	    if(fabs(reg[ir].wav[w] - li.w0) > li.width) continue;
+
+	    
+	    /* ---  ionization stage population / partition function --- */
+	    
+	    double n_u = eos.spectab[kk][li.idx].n_tot[li.ion-1];
+	    
+	    
+	    /* --- Doppler width and damping --- */
+
+	    double dlnu = li.nu0 * cprof::get_doppler_factor(m.temp[kk], m.vturb[kk], li.amass);
+	    double damp = cprof::damp(li, m.temp[kk], m.nne[kk], nH1, nHe1, dlnu);
+	    
+	    
+	    /* --- LTE opac --- */
+	    
+	    double lineopac = lte_opac(m.temp[kk], n_u, li.gf, li.e_low, li.nu0);
+	    
+	    
+	    /* ---Normalized Voigt profile * opacity --- */
+	    
+	    opac[kk] +=  lineopac * cprof::getProfile(inu, li, m.vz[kk], dlnu, damp);
+
+	    
+	  } // ii
+	} // if lines
+      } // kk
+
+      
+      /* --- Compute formal solution at this wavelength, select method --- */
+
+      if(solver == 0) cprof::bezier3_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx]);
+      else             cprof::linear_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx]);
+      
+
+    } // w
+  } // region
+
   
+  /* --- Cleanup --- */
+
+  delete [] sf;
+  delete [] opac;
 }

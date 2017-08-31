@@ -11,6 +11,8 @@
 #include <string>
 #include "mtypes.h"
 #include "cmemt2.h"
+#include "eoswrap.h" 
+
 
 /* Interface for Fortran routines */
 extern "C" {
@@ -34,6 +36,8 @@ extern "C" {
   
   void check_(const char [][3], char [][8], int *, int &, int &, int &);
 
+  void xsaha_(int &, float &, float &, float &, int &, float *, double *, int &);
+
   /*
   void contop_(float &T, float &TKEV, float &TK, float &HKT, float &TLOG,
 	       float &XNA, float &XNE, double *WLGRID, double *OPACITY,
@@ -53,18 +57,18 @@ struct iabund{
 
 
 /* class definition */
-class ceos{
+class ceos: public eoswrap{
  private:
   
   
  public:
   // Atomic data (see implementation file)
-  static const int   MAX_ELEM = 99;
+  // static const int   MAX_ELEM = 99;
 
   static const float AMASS[MAX_ELEM];
   static const char  ELEMEN[MAX_ELEM][3];
   static const float ABUND_default[MAX_ELEM];
-  float ABUND[MAX_ELEM];
+  //float ABUND[MAX_ELEM];
   int NELEM, NLIST, NLINES;
 
   
@@ -75,7 +79,7 @@ class ceos{
   static constexpr double me = 9.10938215E-28;
 
   // EOS book keeping
-  double avmol, wsum, asum, gravity, totalAbund;
+  double avmol, wsum, asum, gravity;
   int    IXH1,IXH2,IXHMIN,IXHE1,IXHE2,IXHE3,IXC1,IXAL1,IXSI1, 
          IXSI2,IXCA1,IXCA2,IXMG1,IXMG2,IXFE1,IXN1,IXO1;
 
@@ -96,6 +100,8 @@ class ceos{
   ceos(double grav = 4.44);
   ceos(std::vector<line_t> &lines, double grav = 4.44);
   ceos(std::vector<line_t> &lines, std::vector<iabund> &ab, double grav = 4.44);
+  ceos(std::vector<line_t> &lines, int n = 0, float *iab = NULL, double grav = 4.44);
+
   void initAbundances(std::vector<iabund> &ab, bool verbose = false);
   void initEOS(std::vector<line_t> &lines);
   
@@ -103,48 +109,16 @@ class ceos{
   ~ceos(){
     totallist.clear();
   }
+  double Pe_from_Pg    (double T,  double Pg, double *dum = NULL);
+  double Pg_from_Pe    (double T,  double Pg, double *dum = NULL);
+  double Pg_from_Rho    (double T,  double rho, double &Pe);
 
-  double nne_from_T_Pg    (double T,  double Pg,  double &rho, double iPe = -1.0);
-  double nne_from_T_rho   (double T, double &iPg,  double rho, float tol = 1.0e-5);
-  double rho_from_T_pel   (double T, double &iPg,   double Pe, float tol = 1.0e-5);
-  double rho_from_T_nne   (double T, double &iPg,  double nne, float tol = 1.0e-5);
 
-  double nne_from_T_Pg_nne (double T,  double Pg,  double &rho, double nne, double iPe = -1.0);
-  double nne_from_T_rho_nne(double T, double &iPg,  double rho, double nne, float tol = 1.0e-5);
-
-  
-  float nne_from_T_Pg    (float T, float Pg,  float &rho, float Pe = -1.0);
-  float nne_from_T_rho   (float T, float &Pg,  float rho, float tol = 1.0e-5);
-  float rho_from_T_pel   (float T, float &Pg,   float Pe, float tol = 1.0e-5);
-  float rho_from_T_nne   (float T, float &Pg,  float nne, float tol = 1.0e-5);
-  
-  void  contOpacity_TPg  (double T, double Pg, int nw, double *w, double *opac,
-			  double *scattering, double Pe=-1.0);
-  
-  void  contOpacity_TRho  (double T, double rho, int nw, double *w, double *opac,
-			  double *scattering, double Pe=-1.0);
-
-  void contOpacity        (double T, int nw, double *w,
-			   double *opac, double *scattering, std::vector<float> &frac, float na, float ne);
-
-  void  hydrostatic      (int ndep, double *tau, double *t, double *Pg, double *rho,
-			  double *nel, double *pel,  double pgas_bound, float tol = 1.0e-5);
-
-  void  hydrostatic      (int ndep, double *tau, double *t, double *Pg, double *rho,
-			  double *nel, double *pel,  double *z, double *cmass, double pgas_bound, float tol = 1.0e-5);
-  
-  void  hydrostatic      (int ndep, float *tau, float *t, float *Pg, float *rho,
-			  float *nel, float *pel, float pgas_bound, float tol = 1.0e-5);
-
-  
   void store_partial_pressures(int ndep, int k, float na, float ne);
   void read_partial_pressures(int k, std::vector<float> &frac, std::vector<float> &part, float &xa, float &xe);
   void unique(void);
-  void fill_densities(int ndep, double *t, double *pgas, double *rho, double *pel,
-		      double *nne, int touse, int keep_nne = 0, float tol = 1.0e-5);
 
-  //float test_pgas_from_rho(float T, float rho,  float &nne);
-
+  float init_pe_from_T_pg(float t, float pg);
 };
 
 

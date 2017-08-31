@@ -9,7 +9,9 @@
  */
 
 namespace phyc{
-  static constexpr double BK = 1.3806488E-16;               // Boltzmann [erg K]
+  static constexpr double BK = 1.3806488E-16;               // Boltzmann [erg / K]
+  static constexpr double EV = 1.602176565E-12;             // Electron Volt to erg
+  static constexpr double BKeV = BK/EV;                     // Boltzmann [eV / K]
   static constexpr double HH = 6.62606957E-27;              // Planck [erg s]
   static constexpr double EE = 4.80320441E-10;              // Electron charge
   static constexpr double CC = 2.99792458E10;               // Speed of light
@@ -22,7 +24,6 @@ namespace phyc{
   static constexpr double ISQRTPI = 0.5641895835477563;     // 1 / sqrt(pi)
   static constexpr double DTOR = PI / 180.0;                // deg to rad
   static constexpr double RADEG = 180.0 / PI;               // rad to deg
-  static constexpr double EV = 1.602176565E-12;             // Electron Volt to erg
   static constexpr double CM1_TO_EV = HH*CC/EV;             // CM^-1 to eV
   static constexpr double EV_TO_CM1 = EV / (HH*CC);         // eV to CM^-1
 
@@ -80,6 +81,20 @@ namespace phyc{
      ,20.42,15.03,16.68,19.,20.,20.,22.,10.144,12.1,12.,12.,12.,12.,12.,12.,
      12.,12.,12., 12};
   /* ---                       --- */
+
+
+  static constexpr char ELEM[MAX_ELEM][3] =
+  {"H ",  "He",  "Li",  "Be",  "B ",  "C ",  "N ",  "O ",  "F ",  "Ne",
+   "Na",  "Mg",  "Al",  "Si",  "P ",  "S ",  "Cl",  "Ar",  "K ",  "Ca",
+   "Sc",  "Ti",  "V ",  "Cr",  "Mn",  "Fe",  "Co",  "Ni",  "Cu",  "Zn",
+   "Ga",  "Ge",  "As",  "Se",  "Br",  "Kr",  "Rb",  "Sr",  "Y ",  "Zr",
+   "Nb",  "Mo",  "Tc",  "Ru",  "Rh",  "Pd",  "Ag",  "Cd",  "In",  "Sn",
+   "Sb",  "Te",  "I ",  "Xe",  "Cs",  "Ba",  "La",  "Ce",  "Pr",  "Nd",
+   "Pm",  "Sm",  "Eu",  "Gd",  "Tb",  "Dy",  "Ho",  "Er",  "Tm",  "Yb",
+   "Lu",  "Hf",  "Ta",  "W ",  "Re",  "Os",  "Ir",  "Pt",  "Au",  "Hg",
+   "Tl",  "Pb",  "Bi",  "Po",  "At",  "Rn",  "Fr",  "Ra",  "Ac",  "Th",
+   "Pa",  "U ",  "Np",  "Pu",  "Am",  "Cm",  "Bk",  "Cs",  "Es"};
+
 }
 
 #endif
