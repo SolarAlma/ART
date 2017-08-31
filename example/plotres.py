@@ -1,6 +1,10 @@
 import h5py
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import numpy  as np
+
+plt.close("all")
+plt.ion()
 
 # Open synthetic file
 
@@ -8,7 +12,7 @@ f = h5py.File('synthetic.h5', 'r')
 
 # Define plot stuff
 
-a = f["Stokes_I"]
+a = np.float32(f["Stokes_I"][:])
 tit = ['1 mm', '3.1 mm']
 f = plt.figure(figsize=(6,5))
 ax = []
@@ -22,8 +26,8 @@ gs.update( wspace=0.02, hspace=0.0,left=0.06, right=0.99, top=0.95, bottom=0.1)
 
 # Make plot
 
-ax[0].imshow(a[0,:,:,0], interpolation='lanczos', aspect=1, extent=extent)
-ax[1].imshow(a[0,:,:,1], interpolation='lanczos', aspect=1, extent=extent)
+ax[0].imshow(a[0,:,:,0], interpolation='nearest', aspect=1, extent=extent)
+ax[1].imshow(a[0,:,:,1], interpolation='nearest', aspect=1, extent=extent)
 
 # Change axes
 
@@ -43,3 +47,4 @@ ax[1].set_title(tit[1])
 
 f.savefig('fig_test.pdf', format='pdf', bbox='standard', compression=1)
 
+f.show()
