@@ -2,6 +2,7 @@
 #define EOS_WRAP_H
 
 #include <cmath>
+#include <cstring>
 #include <vector>
 #include "mtypes.h"
 
