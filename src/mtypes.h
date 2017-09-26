@@ -65,7 +65,9 @@ struct h5prof{
   std::string filename;
   std::vector<double> x, y, z;
   int nx, ny, ndep, nt;
-  hid_t vid[4];
+  int nvid = 2;
+  hid_t vid[2]; // Stokes_I + tau = 1
+  // hid_t vid[4]; 4 Stokes parameters + formation heigt
   hid_t fid, did, mid;
 };
 
