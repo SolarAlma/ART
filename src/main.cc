@@ -109,6 +109,7 @@ void processData(info &inp)
     /* --- Write to disk --- */
 
     writeProfileTYX(tt, yy, xx, &synthetic[0], inp);
+    writeTau1TYX(tt,yy,xx, &atmos.tau_eq_1_z[0], inp);
 
     
     /* --- printout some info --- */
