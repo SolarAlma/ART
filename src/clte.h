@@ -21,25 +21,27 @@
 #include "model.h"
 #include "ceos.h"
 
+
 class clte{
  private:
   size_t nreg, nlin, ndep;
   line *lin;
   std::vector<region> reg;
   std::vector<size_t> roff;
-  std::vector<float>  tau_eq_1_z;
-
   bool lines;
  public:
   size_t nw;
   std::vector<double> lambda;
-
+  std::vector<float>  tau_eq_1_z;
+  std::vector<double> C;
+  
+  
   clte(std::vector<region> &reg, std::vector<line> &lin);
-  ~clte(){};
+ ~clte(){};
   
   double vac2air(double alamb);
   double air2vac(double alamb);
-  void synth_nonpol(modl::mdepth &m, double *syn, eoswrap &eos, double mu, int solver = 0);
+  void synth_nonpol(modl::mdepth &m, double *syn, eoswrap &eos, double mu, int solver, bool getContrib);
 
   void delobez3_int(int ndep, double *z, double *op, double *sf, double &syn, double mu, float &tau_eq_1);
   void linear_int(int ndep, double *z, double *op, double *sf, double &syn,double mu, float &tau_eq_1);

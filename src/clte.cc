@@ -37,7 +37,7 @@ clte::clte(std::vector<region> &reg_in, std::vector<line> &lin_in)
   for(auto &it: reg) nw += it.nw;
 
   lambda.resize(nw);
-
+  
   
   /* --- loop regions and collect wavs --- */
 
@@ -69,6 +69,7 @@ clte::clte(std::vector<region> &reg_in, std::vector<line> &lin_in)
   if(lines)
     for(size_t ii=0;ii<(size_t)nlin; ii++)
       cprof::init_zeeman_components(lin_in[ii]);
+
 } 
 
 /* ---------------------------------------------------------------------------- */
@@ -82,8 +83,7 @@ double clte::vac2air(double alamb)
 
 /* ---------------------------------------------------------------------------- */
 
-double clte::air2vac(double lambda_air)
-{
+double clte::air2vac(double lambda_air) {
   // Init values
   double lambda_vacuum;
   if(lambda_air > 2000) lambda_vacuum = lambda_air / 1.00029;
@@ -97,7 +97,6 @@ double clte::air2vac(double lambda_air)
   }
   return lambda_vacuum;
 }
-
 
 /* ---------------------------------------------------------------------------- */    
 
@@ -115,93 +114,89 @@ double clte::lte_opac(double temp, double n_u, double gf, double elow, double nu
 
 /* ---------------------------------------------------------------------------- */    
 
-void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int solver)
-{
+void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int solver, bool getContrib) {
 
   /* --- Init vars --- */
   
   ndep = m.ndep;
-  double *sf = new double [ndep], *opac = new double [ndep];
+  double *sf = new double [ndep], *opac = new double [ndep], *pC;
   int k0 = m.k0, k1 = m.k1;
 
+  
+  /* --- Check dimensions of array to store contribution functions --- */
+
+  size_t depwavtot = size_t(nw) * size_t(ndep);
+  if(getContrib){
+    if(C.size() != depwavtot) C.resize(depwavtot, 0.0);
+    memset(&C[0], 0, depwavtot*sizeof(double));
+  }
+  
   
   /* --- Now integrate emerging intensity for each wavelength --- */
 
   for(size_t ir=0; ir<nreg; ir++){
     for(int w = 0; w < reg[ir].nw; w++){ // Loop lambda
-      
       size_t idx = w + reg[ir].off;
       double ilambda = lambda[idx], inu =  reg[ir].nu[w];
-
+      
       for(int kk = k0; kk<=k1; kk++){
+        
+        /* --- Get background opacity --- */
 
-	
-	/* --- Get background opacity --- */
-	
-	eos.contOpacity(m.temp[kk], m.nne[kk], kk, 1, &ilambda, &opac[kk]);
-	
-	
-	/* --- Planck function --- */
+        eos.contOpacity(m.temp[kk], m.nne[kk], kk, 1, &ilambda, &opac[kk]);
 
-	sf[kk] = cprof::planck_nu<double>(inu, m.temp[kk]);
+        /* --- Planck function --- */
 
-	
-	/* --- Compute line opacities if needed --- */
-	
-	if(lines){
+        sf[kk] = cprof::planck_nu<double>(inu, m.temp[kk]);
 
-	  /*--- neutral Hydrogen and neutral Helium for Barklem's van der Waals broadening --- */
+        /* --- Compute line opacities if needed --- */
+
+        if (this->lines) {
+
+        /*--- neutral Hydrogen and neutral Helium for Barklem's van der Waals broadening --- */
+
+          double nH1 =  eos.spectab[kk][0].n_tot[0] * eos.spectab[kk][0].pf[0];
+          double nHe1 = eos.spectab[kk][1].n_tot[0] * eos.spectab[kk][1].pf[0];
+
+        /* --- Cycle each line and sum the opacity contribution --- */
 	  
-	  double nH1 =  eos.spectab[kk][0].n_tot[0] * eos.spectab[kk][0].pf[0];
-	  double nHe1 = eos.spectab[kk][1].n_tot[0] * eos.spectab[kk][1].pf[0];
+	        for(size_t ii = 0; ii<nlin; ii++){
+            line &li = lin[ii];
+	          if(fabs(reg[ir].wav[w] - li.w0) > li.width) continue;
+ 
+	      /* ---  ionization stage population / partition function --- */
+	    
+	          double n_u = eos.spectab[kk][li.idx].n_tot[li.ion-1];
+	    
+	      /* --- Doppler width and damping --- */
 
-	  
-	  /* --- Cycle each line and sum the opacity contribution --- */
-	  
-	  for(size_t ii = 0; ii<nlin; ii++){
+	          double dlnu = li.nu0 * cprof::get_doppler_factor(m.temp[kk], m.vturb[kk], li.amass);
+	          double damp = cprof::damp(li, m.temp[kk], m.nne[kk], nH1, nHe1, dlnu);
 	    
-	    line &li = lin[ii];
-	    if(fabs(reg[ir].wav[w] - li.w0) > li.width) continue;
-
+	      /* --- LTE opac --- */
 	    
-	    /* ---  ionization stage population / partition function --- */
+	          double lineopac = lte_opac(m.temp[kk], n_u, li.gf, li.e_low, li.nu0);
 	    
-	    double n_u = eos.spectab[kk][li.idx].n_tot[li.ion-1];
+	      /* ---Normalized Voigt profile * opacity --- */
 	    
-	    
-	    /* --- Doppler width and damping --- */
-
-	    double dlnu = li.nu0 * cprof::get_doppler_factor(m.temp[kk], m.vturb[kk], li.amass);
-	    double damp = cprof::damp(li, m.temp[kk], m.nne[kk], nH1, nHe1, dlnu);
-	    
-	    
-	    /* --- LTE opac --- */
-	    
-	    double lineopac = lte_opac(m.temp[kk], n_u, li.gf, li.e_low, li.nu0);
-	    
-	    
-	    /* ---Normalized Voigt profile * opacity --- */
-	    
-	    opac[kk] +=  lineopac * cprof::getProfile(inu, li, m.vz[kk], dlnu, damp);
-
-	    
-	  } // ii
-	} // if lines
+	          opac[kk] +=  lineopac * cprof::getProfile(inu, li, m.vz[kk], dlnu, damp);
+	        } // ii
+	      } // if lines
       } // kk
 
-      
       /* --- Compute formal solution at this wavelength, select method --- */
 
-      if(solver == 0) cprof::bezier3_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx]);
-      else             cprof::linear_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx]);
+      if(getContrib) pC = &C[idx*ndep+k0];
+      else           pC = NULL;
       
-
+      if(solver == 0) cprof::bezier3_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx], pC);
+      else             cprof::linear_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx], pC);
     } // w
-  } // region
-
+  } // ir
   
   /* --- Cleanup --- */
 
   delete [] sf;
   delete [] opac;
+  
 }

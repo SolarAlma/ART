@@ -3,9 +3,12 @@
 # Testes with:
 #
 # Loaded Modulefiles:
-#   1) Intel_composer_xe/2017/0.098   2) openmpi/Intel/1.10.4
+#  1) modulefiles/Intel_parallel_studio/2017/4.196
+#  2) use.own
+#  3) local_hdf5
 
-HDF5_DIR  = /mn/stornext/u3/mikolajs/SrcModules/hdf5-1.10.0-patch1
+# HDF5_DIR  = /mn/stornext/u3/mikolajs/My_local/hdf5
+HDF5_DIR  = ${HDF5DIR}
 
 CXX       = mpiicpc
 FC        = mpiifort
@@ -19,5 +22,5 @@ OPTFLAGS  = -O3 -xHost # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2
 F90FLAGS  = -O3 -xHost -fp-model source
 CXXFLAGS  = $(OPTFLAGS) -std=c++11
 
-LDFLAGS   = -lstdc++ -L$(HDF5_DIR)/lib/ -lhdf5 -lhdf5_hl -nofor_main -openmp
+LDFLAGS   = -lstdc++ -lhdf5 -lhdf5_hl -lszip-shared -nofor_main 
 DEBUG	    =

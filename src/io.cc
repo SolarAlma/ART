@@ -109,7 +109,7 @@ void readInput(string filename, info &input, bool verbose) {
   input.mu = 1.0, input.verbose = 1, input.nx=0, input.ny = 0, input.ndep = 0,
     input.nw=0, input.nstokes = 0, input.solver = 0, input.ipix = 0, input.log = stderr,
     input.temperature_cut = -1.0, input.eos_type = 0, input.gravity = 4.44,
-    input.dlam = 2.0;
+    input.dlam = 2.0, input.getContrib = 0;
 
   
   std::ifstream in(filename, std::ios::in | std::ios::binary);
@@ -175,6 +175,10 @@ void readInput(string filename, info &input, bool verbose) {
       }
       else if(key == "verbose"){
 	input.verbose = atoi(field.c_str());
+	set = true;
+      }
+      else if(key == "get_contribution_funtion"){
+	input.getContrib = atoi(field.c_str());
 	set = true;
       }
       else if(key == "temperature_cut"){
@@ -402,6 +406,26 @@ void writeProfileTYX(size_t tt, size_t yy, size_t xx, double *sp, info &inp)
     h5err(inp.myrank, routineName); 
 }
 
+void writeTau1TYX(size_t tt, size_t yy, size_t xx, float *sp, info &inp)
+{
+  hsize_t    offset[4] = {0,0,0,0}, count[4] = {1,1,1,1};
+  count[3] = (hsize_t)inp.nw;
+  offset[0] = (hsize_t)tt, offset[1] = (hsize_t)yy, offset[2] = (hsize_t)xx;
+  
+  const char routineName[] = "writeTau1TYX";
+
+  /* --- Select hyperslab in file --- */
+  
+  if (( H5Sselect_hyperslab(inp.p.did, H5S_SELECT_SET, offset, NULL, count, NULL) ) < 0)
+    h5err(inp.myrank, routineName);
+
+
+  /* --- Write data --- */
+  
+  if (( H5Dwrite(inp.p.vid[1], H5T_NATIVE_FLOAT, inp.p.mid, inp.p.did, H5P_DEFAULT, sp) ) < 0) 
+    h5err(inp.myrank, routineName); 
+}
+
 /* ---------------------------------------------------------------------------- */
 
 void initWriteIO(info &inp, double *lambda)
@@ -422,21 +446,29 @@ void initWriteIO(info &inp, double *lambda)
 
   /* --- Create dataspace and datasets, data are stored as float32 --- */
   
-  hsize_t dims[4];
-  dims[0] = (hsize_t)inp.nt, dims[1] = (hsize_t)inp.ny, dims[2] = (hsize_t)inp.nx,
-    dims[3] = (hsize_t)inp.nw;
+  hsize_t dims[] = { (hsize_t)inp.nt, (hsize_t)inp.ny, (hsize_t)inp.nx, (hsize_t)inp.nw };
   
   if (( inp.p.did = H5Screate_simple(4, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
   if (( plist = H5Pcreate(H5P_DATASET_CREATE) ) < 0) h5err(inp.myrank, routineName);
-  if (( inp.p.vid[0] = H5Dcreate(inp.p.fid, "Stokes_I", H5T_NATIVE_FLOAT,inp.p.did,
+  
+  
+  /* --- Create data space for Stoke_I parameters --- */
+
+  if (( inp.p.vid[0] = H5Dcreate(inp.p.fid, "Stokes_I", H5T_NATIVE_DOUBLE,inp.p.did,
 				 H5P_DEFAULT, plist, H5P_DEFAULT)) < 0)
     h5err(inp.myrank, routineName);
 
 
+  /* --- Create data space for formation height --- */
+
+  if (( inp.p.vid[1] = H5Dcreate(inp.p.fid, "Tau1", H5T_NATIVE_FLOAT,inp.p.did,
+         H5P_DEFAULT, plist, H5P_DEFAULT)) < 0)
+    h5err(inp.myrank, routineName);
+
   
   /* --- Store wavelength array --- */
   
-  dims[0] = inp.nw;
+  dims[0] = (hsize_t)inp.nw;
   if (( H5LTmake_dataset(inp.p.fid, "Wavelength", 1, dims, H5T_NATIVE_DOUBLE, lambda) ) < 0)
     h5err(inp.myrank, routineName);
   
@@ -447,9 +479,9 @@ void initWriteIO(info &inp, double *lambda)
 
   /* --- Init memspace and dataspace --- */
 
-  dims[0] = (hsize_t)inp.nw;
   if (( inp.p.mid = H5Screate_simple(1, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
   if (( inp.p.did = H5Dget_space(inp.p.vid[0]) ) < 0)  h5err(inp.myrank, routineName);
+  if (( inp.p.did = H5Dget_space(inp.p.vid[1]) ) < 0)  h5err(inp.myrank, routineName);
   
   if (( H5Pclose(plist) ) < 0)  h5err(inp.myrank, routineName); 
 
@@ -464,8 +496,9 @@ void closeProfile(info &inp)
   
   if (( H5Sclose(inp.p.did) ) < 0) h5err(inp.myrank, routineName); 
   if (( H5Sclose(inp.p.mid) ) < 0) h5err(inp.myrank, routineName);
-  //
-  if (( H5Dclose(inp.p.vid[0]) ) < 0) h5err(inp.myrank, routineName); 
+  for (size_t i = 0; i < inp.p.nvid; ++i) {
+      if (( H5Dclose(inp.p.vid[i]) ) < 0) h5err(inp.myrank, routineName); 
+  }
   if (( H5Fclose(inp.p.fid) ) < 0) h5err(inp.myrank, routineName); 
 }
 

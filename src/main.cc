@@ -102,13 +102,14 @@ void processData(info &inp)
     
     /* --- get spectrum --- */
 
-    atmos.synth_nonpol(m, &synthetic[0], *EoS, inp.mu, 0);
+    atmos.synth_nonpol(m, &synthetic[0], *EoS, inp.mu, inp.solver, (bool)inp.getContrib);
     
     //exit(0);
     
     /* --- Write to disk --- */
 
     writeProfileTYX(tt, yy, xx, &synthetic[0], inp);
+    writeTau1TYX(tt,yy,xx, &atmos.tau_eq_1_z[0], inp);
 
     
     /* --- printout some info --- */

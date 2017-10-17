@@ -338,7 +338,20 @@ namespace cprof{
     }
   }
 
-/* ---------------------------------------------------------------------------- */
+  /* ---------------------------------------------------------------------------- */
+
+  inline void getContributionFunction(int n, double *sf, double *tau, double *op, double *C)
+  {
+    
+    /* --- Now compute the contribution function C = S * exp(-tau) * alpha --- */
+    
+    for(int kk = 0; kk < n; kk++) C[kk] = sf[kk] * exp(-tau[kk]) * op[kk];
+    
+    
+  }
+  
+  
+  /* ---------------------------------------------------------------------------- */
 
   void getTauNu(int n, double *opac, double *z, double *dtau, int &k0, int &k1, float &z_tau, double mu)
   {
@@ -416,7 +429,7 @@ namespace cprof{
 /* ---------------------------------------------------------------------------- */
 
   void linear_int(int ndep, double *z, double *op, double *sf, double &syn,
-		      double mu, float &tau_eq_1)
+		  double mu, float &tau_eq_1, double *C)
 {
 
   double *dtau = new double [ndep](), dz = 0.0, eps, c0, cu, u0, u1;
@@ -455,6 +468,23 @@ namespace cprof{
 
     syn = syn*eps + sf[k]*c0 + sf[ku]*cu;
   }
+
+
+  /* --- Compute contribution function --- */
+  
+  if(C){
+    
+    double *tau = new double [ndep];
+    tau[0] = 1.e-10;
+    for(int kk=1; kk<ndep; kk++) tau[kk] = tau[kk-1] + dtau[kk];
+    
+    getContributionFunction(kdep-kup+1, &sf[kup], &dtau[kup], &op[kup], &C[kup]);
+    delete [] tau;
+    
+  }
+  
+  /* --- Cleanup --- */
+  
   delete [] dtau;
   
 }
@@ -462,7 +492,7 @@ namespace cprof{
 /* ---------------------------------------------------------------------------- */
 
 void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
-			double mu, float &tau_eq_1)
+			double mu, float &tau_eq_1, double *C)
 {
   
   double *dtau = new double [ndep]();
@@ -482,11 +512,10 @@ void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
   /* --- Get the derivatives of the source function with heigt --- */
   
   double *dsf = new double [ndep], *tau = new double [ndep];
-  tau[0] = 0.0;
+  tau[0] = 1.e-10;
   for(int kk=1; kk<ndep; kk++) tau[kk] = tau[kk-1] + dtau[kk];
   
   cent_der<double>(ndep, tau, sf, dsf);
-  delete [] tau;
 
   
   /* --- Integrate ray --- */
@@ -529,10 +558,18 @@ void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
     
     syn = syn * eps + sf[k] * alp + sf[ku] * bet + c_0 * gam + c_u * mu;
   }
+
+  /* --- Compute contribution function --- */
+
+  if(C) getContributionFunction(kdep-kup+1, &sf[kup], &tau[kup], &op[kup], &C[kup]);
   
+
+  /* --- Cleanup --- */
+
   delete [] dsf;
   delete [] dtau;
-  
+  delete [] tau;
+
  }
   
 };
