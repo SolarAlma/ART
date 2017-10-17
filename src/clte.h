@@ -27,7 +27,6 @@ class clte{
   line *lin;
   std::vector<region> reg;
   std::vector<size_t> roff;
-  // std::vector<float>  tau_eq_1_z;
 
   bool lines;
  public:
@@ -35,7 +34,7 @@ class clte{
   std::vector<double> lambda;
   std::vector<float>  tau_eq_1_z;
   clte(std::vector<region> &reg, std::vector<line> &lin);
-  ~clte(){};
+ ~clte(){};
   
   double vac2air(double alamb);
   double air2vac(double alamb);
