@@ -340,24 +340,13 @@ namespace cprof{
 
   /* ---------------------------------------------------------------------------- */
 
-  inline void getContributionFunction(int n, double *sf, double *dtau, double *op, double *C)
+  inline void getContributionFunction(int n, double *sf, double *tau, double *op, double *C)
   {
-    
-    /* --- Init values at the upper boundary --- */
-
-    double *tau = new double [n]; tau[0] = 0.0;
-    for(int kk = 1; kk < n; kk++) tau[kk] = tau[kk-1] + dtau[kk];
-    tau[0] = exp(2.0 * log(tau[1]) - log(tau[2])); // Extrapolate tau at the boundary
-    
     
     /* --- Now compute the contribution function C = S * exp(-tau) * alpha --- */
     
     for(int kk = 0; kk < n; kk++) C[kk] = sf[kk] * exp(-tau[kk]) * op[kk];
     
-
-    /* --- Clean-up --- */
-
-    delete [] tau;
     
   }
   
@@ -481,11 +470,18 @@ namespace cprof{
   }
 
 
-  /* --- Compute response function --- */
-
-  if(C) getContributionFunction(kdep-kup+1, &sf[kup], &dtau[kup], &op[kup], &C[kup]);
+  /* --- Compute contribution function --- */
   
-  
+  if(C){
+    
+    double *tau = new double [ndep];
+    tau[0] = 1.e-10;
+    for(int kk=1; kk<ndep; kk++) tau[kk] = tau[kk-1] + dtau[kk];
+    
+    getContributionFunction(kdep-kup+1, &sf[kup], &dtau[kup], &op[kup], &C[kup]);
+    delete [] tau;
+    
+  }
   
   /* --- Cleanup --- */
   
@@ -516,11 +512,10 @@ void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
   /* --- Get the derivatives of the source function with heigt --- */
   
   double *dsf = new double [ndep], *tau = new double [ndep];
-  tau[0] = 0.0;
+  tau[0] = 1.e-10;
   for(int kk=1; kk<ndep; kk++) tau[kk] = tau[kk-1] + dtau[kk];
   
   cent_der<double>(ndep, tau, sf, dsf);
-  delete [] tau;
 
   
   /* --- Integrate ray --- */
@@ -564,16 +559,17 @@ void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
     syn = syn * eps + sf[k] * alp + sf[ku] * bet + c_0 * gam + c_u * mu;
   }
 
-  /* --- Compute response function --- */
-  
-  if(C) getContributionFunction(kdep-kup+1, &sf[kup], &dtau[kup], &op[kup], &C[kup]);
+  /* --- Compute contribution function --- */
+  fprintf(stderr,"%d %d %d %e\n",kdep-kup+1, kup, kdep, z[kdep]*1.e-5);
+  if(C) getContributionFunction(kdep-kup+1, &sf[kup], &tau[kup], &op[kup], &C[kup]);
   
 
   /* --- Cleanup --- */
 
   delete [] dsf;
   delete [] dtau;
-  
+  delete [] tau;
+
  }
   
 };
