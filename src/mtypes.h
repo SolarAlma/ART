@@ -74,7 +74,8 @@ struct h5prof{
 /* ---------------------------------------------------------------------------- */
 
 struct info{
-  int nx, ny, ndep, nt, nw, nstokes, solver, myrank, nproc, verbose, units, eos_type;
+  int nx, ny, ndep, nt, nw, nstokes, solver, myrank, nproc, verbose, units, eos_type,
+    getContrib;
   double mu, temperature_cut, gravity, dlam;
   size_t ipix;
   std::string hostname;

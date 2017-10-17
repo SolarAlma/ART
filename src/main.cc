@@ -102,7 +102,7 @@ void processData(info &inp)
     
     /* --- get spectrum --- */
 
-    atmos.synth_nonpol(m, &synthetic[0], *EoS, inp.mu, 0);
+    atmos.synth_nonpol(m, &synthetic[0], *EoS, inp.mu, inp.solver, (bool)inp.getContrib);
     
     //exit(0);
     

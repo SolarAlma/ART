@@ -109,7 +109,7 @@ void readInput(string filename, info &input, bool verbose) {
   input.mu = 1.0, input.verbose = 1, input.nx=0, input.ny = 0, input.ndep = 0,
     input.nw=0, input.nstokes = 0, input.solver = 0, input.ipix = 0, input.log = stderr,
     input.temperature_cut = -1.0, input.eos_type = 0, input.gravity = 4.44,
-    input.dlam = 2.0;
+    input.dlam = 2.0, input.getContrib = 0;
 
   
   std::ifstream in(filename, std::ios::in | std::ios::binary);
@@ -175,6 +175,10 @@ void readInput(string filename, info &input, bool verbose) {
       }
       else if(key == "verbose"){
 	input.verbose = atoi(field.c_str());
+	set = true;
+      }
+      else if(key == "get_contribution_funtion"){
+	input.getContrib = atoi(field.c_str());
 	set = true;
       }
       else if(key == "temperature_cut"){

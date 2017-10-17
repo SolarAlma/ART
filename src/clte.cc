@@ -37,7 +37,7 @@ clte::clte(std::vector<region> &reg_in, std::vector<line> &lin_in)
   for(auto &it: reg) nw += it.nw;
 
   lambda.resize(nw);
-
+  
   
   /* --- loop regions and collect wavs --- */
 
@@ -69,6 +69,7 @@ clte::clte(std::vector<region> &reg_in, std::vector<line> &lin_in)
   if(lines)
     for(size_t ii=0;ii<(size_t)nlin; ii++)
       cprof::init_zeeman_components(lin_in[ii]);
+
 } 
 
 /* ---------------------------------------------------------------------------- */
@@ -113,14 +114,24 @@ double clte::lte_opac(double temp, double n_u, double gf, double elow, double nu
 
 /* ---------------------------------------------------------------------------- */    
 
-void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int solver) {
+void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int solver, bool getContrib) {
 
   /* --- Init vars --- */
   
   ndep = m.ndep;
-  double *sf = new double [ndep], *opac = new double [ndep];
+  double *sf = new double [ndep], *opac = new double [ndep], *pC;
   int k0 = m.k0, k1 = m.k1;
 
+  
+  /* --- Check dimensions of array to store contribution functions --- */
+
+  size_t depwavtot = size_t(nw) * size_t(ndep);
+  if(getContrib){
+    if(C.size() != depwavtot) C.resize(depwavtot, 0.0);
+    memset(&C[0], 0, depwavtot*sizeof(double));
+  }
+  
+  
   /* --- Now integrate emerging intensity for each wavelength --- */
 
   for(size_t ir=0; ir<nreg; ir++){
@@ -175,8 +186,11 @@ void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int sol
 
       /* --- Compute formal solution at this wavelength, select method --- */
 
-      if(solver == 0) cprof::bezier3_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx]);
-      else             cprof::linear_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx]);
+      if(getContrib) pC = &C[idx*ndep];
+      else           pC = NULL;
+      
+      if(solver == 0) cprof::bezier3_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx], pC);
+      else             cprof::linear_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx], pC);
     } // w
   } // ir
   
@@ -184,5 +198,4 @@ void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int sol
 
   delete [] sf;
   delete [] opac;
-
 }

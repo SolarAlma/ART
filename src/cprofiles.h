@@ -338,7 +338,31 @@ namespace cprof{
     }
   }
 
-/* ---------------------------------------------------------------------------- */
+  /* ---------------------------------------------------------------------------- */
+
+  inline void getContributionFunction(int n, double *sf, double *dtau, double *op, double *C)
+  {
+    
+    /* --- Init values at the upper boundary --- */
+
+    double *tau = new double [n]; tau[0] = 0.0;
+    for(int kk = 1; kk < n; kk++) tau[kk] = tau[kk-1] + dtau[kk];
+    tau[0] = exp(2.0 * log(tau[1]) - log(tau[2])); // Extrapolate tau at the boundary
+    
+    
+    /* --- Now compute the contribution function C = S * exp(-tau) * alpha --- */
+    
+    for(int kk = 0; kk < n; kk++) C[kk] = sf[kk] * exp(-tau[kk]) * op[kk];
+    
+
+    /* --- Clean-up --- */
+
+    delete [] tau;
+    
+  }
+  
+  
+  /* ---------------------------------------------------------------------------- */
 
   void getTauNu(int n, double *opac, double *z, double *dtau, int &k0, int &k1, float &z_tau, double mu)
   {
@@ -416,7 +440,7 @@ namespace cprof{
 /* ---------------------------------------------------------------------------- */
 
   void linear_int(int ndep, double *z, double *op, double *sf, double &syn,
-		      double mu, float &tau_eq_1)
+		  double mu, float &tau_eq_1, double *C)
 {
 
   double *dtau = new double [ndep](), dz = 0.0, eps, c0, cu, u0, u1;
@@ -455,6 +479,16 @@ namespace cprof{
 
     syn = syn*eps + sf[k]*c0 + sf[ku]*cu;
   }
+
+
+  /* --- Compute response function --- */
+
+  if(C) getContributionFunction(kdep-kup+1, &sf[kup], &dtau[kup], &op[kup], &C[kup]);
+  
+  
+  
+  /* --- Cleanup --- */
+  
   delete [] dtau;
   
 }
@@ -462,7 +496,7 @@ namespace cprof{
 /* ---------------------------------------------------------------------------- */
 
 void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
-			double mu, float &tau_eq_1)
+			double mu, float &tau_eq_1, double *C)
 {
   
   double *dtau = new double [ndep]();
@@ -529,7 +563,14 @@ void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
     
     syn = syn * eps + sf[k] * alp + sf[ku] * bet + c_0 * gam + c_u * mu;
   }
+
+  /* --- Compute response function --- */
   
+  if(C) getContributionFunction(kdep-kup+1, &sf[kup], &dtau[kup], &op[kup], &C[kup]);
+  
+
+  /* --- Cleanup --- */
+
   delete [] dsf;
   delete [] dtau;
   
