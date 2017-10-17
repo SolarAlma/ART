@@ -13,6 +13,6 @@ OPTFLAGS  =
 F90FLAGS  = 
 CXXFLAGS  = $(OPTFLAGS) -std=c++11
 
-LDFLAGS   = -lhdf5 -lhdf5_hl -lz -lsz -pgc++libs -Mnomain
-DEBUG	  =
+LDFLAGS   = -lhdf5 -lhdf5_hl -lz -lsz -lstdc++ -lc++
+DEBUG	    =
 
