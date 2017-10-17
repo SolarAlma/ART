@@ -560,7 +560,7 @@ void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
   }
 
   /* --- Compute contribution function --- */
-  fprintf(stderr,"%d %d %d %e\n",kdep-kup+1, kup, kdep, z[kdep]*1.e-5);
+
   if(C) getContributionFunction(kdep-kup+1, &sf[kup], &tau[kup], &op[kup], &C[kup]);
   
 
