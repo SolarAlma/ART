@@ -45,7 +45,8 @@ void eoswrap::init_Species_table(std::vector<line> &lines)
   size_t nlines = lines.size();
   for(size_t ii = 0; ii<nlines; ii++){
 
-    size_t nn = spectab[0].size(), idx = 0;
+    size_t nn = spectab[0].size();
+    size_t idx = 0;
     int anum = lines[ii].anum;
     bool exists = false;
     for(size_t jj=0; jj<nn; jj++){
