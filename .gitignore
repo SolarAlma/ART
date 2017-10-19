@@ -1,6 +1,4 @@
-
 *.h5
-
 *.log
-
 *.pdf
+runs/
