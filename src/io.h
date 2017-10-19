@@ -35,8 +35,8 @@ void closeModel(info &inp);
 void closeProfile(info &inp);
 void writeProfileTYX(size_t tt, size_t yy, size_t xx, double *sp, info &inp);
 void writeTau1TYX(size_t tt, size_t yy, size_t xx, float *sp, info &inp);
+void writeCFuncTYX(size_t tt, size_t yy, size_t xx, double *sp, info &inp);
 void initWriteIO(info &inp, double *lambda);
 int readValdLines(std::string filename, info &input);
-
 
 #endif

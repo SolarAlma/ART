@@ -71,8 +71,6 @@ void processData(info &inp)
   std::vector<double> synthetic;
   synthetic.resize(atmos.nw);
 
-
-  
   /* --- Init output file --- */
 
   initWriteIO(inp, &atmos.lambda[0]);
@@ -111,7 +109,8 @@ void processData(info &inp)
     writeProfileTYX(tt, yy, xx, &synthetic[0], inp);
     writeTau1TYX(tt,yy,xx, &atmos.tau_eq_1_z[0], inp);
 
-    
+    if ((bool)inp.getContrib) writeCFuncTYX(tt,yy,xx, &atmos.C[0], inp);
+
     /* --- printout some info --- */
 
     per = ipix*100./(std::max(npix-1.0,1.0));
