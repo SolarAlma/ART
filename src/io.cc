@@ -21,6 +21,7 @@
 #include <mpi.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #include "model.h"
 #include "io.h"
@@ -138,16 +139,29 @@ void readInput(string filename, info &input, bool verbose) {
 	set = true;
       }
       else if(key == "logfile"){
-	std::string lname = "log/logProc_"+std::to_string(input.myrank)+".log";
+	std::string lname = "log/logProc_"+std::to_string((long long)input.myrank)+".log";
 
 	if     (field == "stderr") input.log = stderr;
 	else if(field == "stdout") input.log = stdout;
-	else if(field == "master")
+	else if(field == "master"){
+	  if(!bdir_exists("log")) {
+	    if(mkdir("log", 0700) == -1) fprintf(stderr, "Could not create log directory.\n");
+	  }
 	  input.log = (input.myrank >0) ? fopen(lname.c_str(), "w") : stderr;
-	else if(field == "null") input.log = fopen("/dev/null", "w");
+	  if(!input.log){
+	    fprintf(stderr, "Could not create log file %s, logging to stderr instead.\n", lname.c_str());
+	    input.log = stderr;
+	  }
+	} else if(field == "null") input.log = fopen("/dev/null", "w");
 	else{
-	  if(!bdir_exists("log")) mkdir("log", 0700);
+	  if(!bdir_exists("log")) {
+	    if(mkdir("log", 0700) == -1) fprintf(stderr, "Could not create log directory.\n");
+	  }
 	  input.log = fopen(lname.c_str(), "w");
+	  if(!input.log){
+	    fprintf(stderr, "Could not create log file %s, logging to stderr instead.\n", lname.c_str());
+	    input.log = stderr;
+	  }
 	  set = true;
 	}
       }

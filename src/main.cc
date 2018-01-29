@@ -183,21 +183,20 @@ int main(int narg, char *argv[]) {
   }
 
   readInput(input_file, inp, ((inp.myrank == 0) ? true : false));
+  fprintf(stderr,"log target %d\n", inp.log);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  fprintf(inp.log,"test log %d/%d\n", inp.myrank, inp.nproc);
+
   if(inp.lines_file != "") readValdLines(inp.lines_file, inp);
-
-
   
   /* --- Do slave or master based on process number --- */
-
   processData(inp);
-
-
   
   /* --- Finish MPI jobs --- */
   
   MPI_Barrier(MPI_COMM_WORLD); // Wait until all processors reach this point
   MPI_Finalize();
-
 
 }
 

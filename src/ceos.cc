@@ -66,7 +66,7 @@ string pS(string str, const size_t num, const char paddingChar = ' '){
 }
 
 void s2f(string &in, char *out, unsigned n){
-  strcpy(out, in.c_str());
+  strncpy(out, in.c_str(), n);
 
   unsigned l = in.length();
   //unsigned npad = n - l;
@@ -372,7 +372,7 @@ void ceos::unique(void){
 
   /* --- Temporary list that will contain spec + ion --- */
   vector<string> bla  = species;
-  for(int ii=0; ii<(int)species.size();ii++) bla[ii] += std::to_string(ion[ii]);
+  for(int ii=0; ii<(int)species.size();ii++) bla[ii] += std::to_string((long long)ion[ii]);
 
   /* --- idx & uspec are class variable. idx maps the unique values to 
      elements in the original array uspec[idx[ii]] = spec[ii] --- */
