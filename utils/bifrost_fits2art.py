@@ -40,8 +40,6 @@ dz = np.broadcast_to(dz_vec, (dx.shape[0], dy.shape[0], dz_vec.shape[0])) * u.Mm
 
 ny, nx, nz = dens.shape
 
-embed()
-
 # we might set cuts
 
 # ny = 20

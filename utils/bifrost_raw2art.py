@@ -19,9 +19,6 @@ from helita.sim import bifrost as b
 
 from IPython import embed
 
-embed() 
-
-
 root_name = 'cb24bih'
 snap_no   = 385
 
@@ -32,12 +29,13 @@ snap_has_hion = (snap.params['do_hion'] == 1)
 if snap_has_hion:
 	print('Will read xne and temperature from non-LTE solver [!]')
 
-b_dens = snap.r * snap.params['u_r'] * (u.g/u.cm**2)
+b_dens = snap.r * snap.params['u_r'] # now in * (u.g/u.cm**2)
 
 try:
-	b_Pressure = snap.p * snap.params['u_p'] * (u.dyn/u.cm**2)
+	b_Pressure = snap.p * snap.params['u_p'] # now in * (u.dyn/u.cm**2)
 except:
-	print('Well :-(')
+	eostab = b.Rhoeetab()
+	b_Pressure = eostab.tab_interp(b_dens, (snap.e * snap.params['u_e'])/(snap.r * snap.params['u_r']), out='pg') 
 
 if snap_has_hion:
 	b_temperature = snap.hiontg
@@ -45,22 +43,29 @@ else:
 	try:
 		b_temperature = snap.tg
 	except:
-		b_energy = snap.e
-		# b
+		eostab = b.Rhoeetab()
+		b_temperature = eostab.tab_interp(b_dens, (snap.e * snap.params['u_e'])/(snap.r * snap.params['u_r']), out='tg')
 
 if snap_has_hion:
-	b_xne = snap.hionne * (1.0/u.cm**3)
+	b_xne = snap.hionne # in * (1.0/u.cm**3)
+else:
+	try:
+		b_xne = snap.ne
+	except:
+		eostab = b.Rhoeetab()
+		b_xne = eostab.tab_interp(b_dens, (snap.e * snap.params['u_e'])/(snap.r * snap.params['u_r']), out='nel') 
 
-dens =  np.einsum('ijk->jki',np.power(10,b_dens[0].data)) * (u.kg / (u.m**3))
 
-dx = [ b_dens[0].header['DX'] * x for x in range(dens.shape[0]) ] * u.Mm
-dy = [ b_dens[0].header['DY'] * y for y in range(dens.shape[1]) ] * u.Mm
+dens =  np.einsum('ijk->jik',b_dens)[:,:,::-1] * (u.g/u.cm**3) 
 
-temperature =  np.einsum('ijk->jki',np.power(10,b_temperature[0].data)) * u.K # in K
-xne =  np.einsum('ijk->jki',np.power(10,b_xne[0].data)) / u.m**3 
-pressure =  np.einsum('ijk->jki',np.power(10,b_Pressure[0].data)) * (u.N / u.m**2)
+dx = [ snap.dx * x for x in range(dens.shape[0]) ] * u.Mm
+dy = [ snap.dy * y for y in range(dens.shape[1]) ] * u.Mm
 
-dz_vec = b_dens[1].data[:]
+temperature =  np.einsum('ijk->jik',b_temperature)[:,:,::-1] * u.K # in K
+xne =  np.einsum('ijk->jik',b_xne)[:,:,::-1] / u.cm**3 
+pressure =  np.einsum('ijk->jik',b_Pressure)[:,:,::-1] * (u.dyn/u.cm**2)
+
+dz_vec = - snap.z[::-1]
 dz = np.broadcast_to(dz_vec, (dx.shape[0], dy.shape[0], dz_vec.shape[0])) * u.Mm
 
 ny, nx, nz = dens.shape
@@ -95,7 +100,6 @@ h5_Pgas[0,:,:,:]        = pressure[0:ny,0:nx,::-1].cgs.value
 # fill with empty attributes
 
 b.attrs["units"] = 0
-
 
 b.flush()
 b.close()
