@@ -71,8 +71,6 @@ void processData(info &inp)
   std::vector<double> synthetic;
   synthetic.resize(atmos.nw);
 
-
-  
   /* --- Init output file --- */
 
   initWriteIO(inp, &atmos.lambda[0]);
@@ -111,7 +109,8 @@ void processData(info &inp)
     writeProfileTYX(tt, yy, xx, &synthetic[0], inp);
     writeTau1TYX(tt,yy,xx, &atmos.tau_eq_1_z[0], inp);
 
-    
+    if ((bool)inp.getContrib) writeCFuncTYX(tt,yy,xx, &atmos.C[0], inp);
+
     /* --- printout some info --- */
 
     per = ipix*100./(std::max(npix-1.0,1.0));
@@ -184,21 +183,20 @@ int main(int narg, char *argv[]) {
   }
 
   readInput(input_file, inp, ((inp.myrank == 0) ? true : false));
+  fprintf(stderr,"log target %d\n", inp.log);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  fprintf(inp.log,"test log %d/%d\n", inp.myrank, inp.nproc);
+
   if(inp.lines_file != "") readValdLines(inp.lines_file, inp);
-
-
   
   /* --- Do slave or master based on process number --- */
-
   processData(inp);
-
-
   
   /* --- Finish MPI jobs --- */
   
   MPI_Barrier(MPI_COMM_WORLD); // Wait until all processors reach this point
   MPI_Finalize();
-
 
 }
 

@@ -20,6 +20,10 @@ RTINCLUDE = -I$(HDF5_DIR)/include
 
 OPTFLAGS  = -O3 -xHost # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
 F90FLAGS  = -O3 -xHost -fp-model source
+
+# OPTFLAGS  = -O2 -g -traceback # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
+# F90FLAGS  = -O2 -g -traceback -fp-model source
+
 CXXFLAGS  = $(OPTFLAGS) -std=c++11
 
 LDFLAGS   = -lstdc++ -lhdf5 -lhdf5_hl -lszip-shared -nofor_main 

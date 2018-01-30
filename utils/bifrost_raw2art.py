@@ -11,18 +11,45 @@
 
 import h5py
 import numpy as np
+
 from astropy.io import fits
-from astropy import units as u 
+from astropy import units as u
 
-b_dens        = "BIFROST_en024048_hion2_lgr_385.fits"
-b_temperature = "BIFROST_en024048_hion2_lgtg_385.fits"
-b_xne         = "BIFROST_en024048_hion2_lgne_385.fits"
-b_Pressure    = "BIFROST_en024048_hion2_lgp_385.fits"
+from helita.sim import bifrost as b
 
-b_dens = fits.open(b_dens)
-b_temperature = fits.open(b_temperature)
-b_xne = fits.open(b_xne)
-b_Pressure = fits.open(b_Pressure)
+from IPython import embed
+
+embed() 
+
+
+root_name = 'cb24bih'
+snap_no   = 385
+
+snap = b.BifrostData(root_name,snap_no)
+
+snap_has_hion = (snap.params['do_hion'] == 1)
+
+if snap_has_hion:
+	print('Will read xne and temperature from non-LTE solver [!]')
+
+b_dens = snap.r * snap.params['u_r'] * (u.g/u.cm**2)
+
+try:
+	b_Pressure = snap.p * snap.params['u_p'] * (u.dyn/u.cm**2)
+except:
+	print('Well :-(')
+
+if snap_has_hion:
+	b_temperature = snap.hiontg
+else:
+	try:
+		b_temperature = snap.tg
+	except:
+		b_energy = snap.e
+		# b
+
+if snap_has_hion:
+	b_xne = snap.hionne * (1.0/u.cm**3)
 
 dens =  np.einsum('ijk->jki',np.power(10,b_dens[0].data)) * (u.kg / (u.m**3))
 

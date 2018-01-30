@@ -126,7 +126,8 @@ void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int sol
   /* --- Check dimensions of array to store contribution functions --- */
 
   size_t depwavtot = size_t(nw) * size_t(ndep);
-  if(getContrib){
+  
+  if((bool)getContrib){
     if(C.size() != depwavtot) C.resize(depwavtot, 0.0);
     memset(&C[0], 0, depwavtot*sizeof(double));
   }
@@ -186,8 +187,11 @@ void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int sol
 
       /* --- Compute formal solution at this wavelength, select method --- */
 
-      if(getContrib) pC = &C[idx*ndep+k0];
-      else           pC = NULL;
+      if((bool)getContrib){
+        pC = &C[idx*ndep+k0];
+      } else {
+        pC = NULL;
+      }
       
       if(solver == 0) cprof::bezier3_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx], pC);
       else             cprof::linear_int(k1-k0+1, &m.z[k0], &opac[k0], &sf[k0], syn[idx], mu, tau_eq_1_z[idx], pC);

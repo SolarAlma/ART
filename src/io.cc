@@ -21,6 +21,7 @@
 #include <mpi.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #include "model.h"
 #include "io.h"
@@ -35,8 +36,7 @@ using namespace modl;
 
 /* ---------------------------------------------------------------------------- */
 
-int getAnum(char *elem)
-{
+int getAnum(char *elem) {
   // Returns the atomic number assigned to an element label (e.g., "Fe").
   // anum(H) = 1, ... and so on.
   
@@ -139,16 +139,29 @@ void readInput(string filename, info &input, bool verbose) {
 	set = true;
       }
       else if(key == "logfile"){
-	std::string lname = "log/logProc_"+std::to_string(input.myrank)+".log";
+	std::string lname = "log/logProc_"+std::to_string((long long)input.myrank)+".log";
 
 	if     (field == "stderr") input.log = stderr;
 	else if(field == "stdout") input.log = stdout;
-	else if(field == "master")
+	else if(field == "master"){
+	  if(!bdir_exists("log")) {
+	    if(mkdir("log", 0700) == -1) fprintf(stderr, "Could not create log directory.\n");
+	  }
 	  input.log = (input.myrank >0) ? fopen(lname.c_str(), "w") : stderr;
-	else if(field == "null") input.log = fopen("/dev/null", "w");
+	  if(!input.log){
+	    fprintf(stderr, "Could not create log file %s, logging to stderr instead.\n", lname.c_str());
+	    input.log = stderr;
+	  }
+	} else if(field == "null") input.log = fopen("/dev/null", "w");
 	else{
-	  if(!bdir_exists("log")) mkdir("log", 0700);
+	  if(!bdir_exists("log")) {
+	    if(mkdir("log", 0700) == -1) fprintf(stderr, "Could not create log directory.\n");
+	  }
 	  input.log = fopen(lname.c_str(), "w");
+	  if(!input.log){
+	    fprintf(stderr, "Could not create log file %s, logging to stderr instead.\n", lname.c_str());
+	    input.log = stderr;
+	  }
 	  set = true;
 	}
       }
@@ -242,8 +255,7 @@ bool bdir_exists(std::string name){
 
 /* ---------------------------------------------------------------------------- */
 
-bool h5varExists(hid_t &fid, std::string vname, hid_t &vid, FILE *log)
-{
+bool h5varExists(hid_t &fid, std::string vname, hid_t &vid, FILE *log) {
   bool res = (bool)H5LTfind_dataset(fid, vname.c_str());
   if(res){
     vid = H5Dopen2(fid, vname.c_str(), H5P_DEFAULT);
@@ -254,8 +266,7 @@ bool h5varExists(hid_t &fid, std::string vname, hid_t &vid, FILE *log)
 
 /* ---------------------------------------------------------------------------- */
 
-void initReadIO(info &inp)
-{
+void initReadIO(info &inp){
 
   const char routineName[] = "initReadIO";
   hid_t plist_id;
@@ -325,22 +336,19 @@ void initReadIO(info &inp)
 
   hsize_t dmem = (hsize_t)inp.ndep;
   if ((inp.m.mid = H5Screate_simple(1, &dmem, NULL)) < 0) h5err(inp.myrank, routineName);
-  if ((inp.m.did = H5Dget_space(inp.m.vid[2])) < 0) h5err(inp.myrank, routineName);
-  
+  if ((inp.m.did = H5Dget_space(inp.m.vid[2])) < 0) h5err(inp.myrank, routineName); 
 }
 
 /* ---------------------------------------------------------------------------- */
 
-void h5err(int myrank, const char *rname)
-{  
+void h5err(int myrank, const char *rname){  
   fprintf(stderr,"error: Process %3d: %s: HDF5 error.\n", myrank, rname);
   MPI_Abort(MPI_COMM_WORLD, 2);
 }
 
 /* ---------------------------------------------------------------------------- */
 
-void readPix(hid_t &hid, hsize_t msp, hsize_t  dsp, double *var, FILE *log)
-{
+void readPix(hid_t &hid, hsize_t msp, hsize_t  dsp, double *var, FILE *log){
   if ((H5Dread(hid, H5T_NATIVE_DOUBLE, msp, dsp, H5P_DEFAULT, var)) < 0){
     fprintf(log, "error: readPix: cannot read variable, exiting!\n");
     MPI_Abort(MPI_COMM_WORLD, 2);
@@ -350,8 +358,7 @@ void readPix(hid_t &hid, hsize_t msp, hsize_t  dsp, double *var, FILE *log)
   
 /* ---------------------------------------------------------------------------- */
 
-void readAtmosTYX(size_t tt, size_t yy, size_t xx, mdepth &m, info &inp)
-{
+void readAtmosTYX(size_t tt, size_t yy, size_t xx, mdepth &m, info &inp){
 
   const char routineName[] = "readAtmosTYX";
   
@@ -380,14 +387,12 @@ void readAtmosTYX(size_t tt, size_t yy, size_t xx, mdepth &m, info &inp)
     if(inp.vdef[ii])
       readPix(inp.m.vid[ii], inp.m.mid, inp.m.did, &m.buf(ii,0), inp.log);
   }
-  if(inp.verbose >= 2) fprintf(inp.log, "info: read nt=%4zu, ny=%4zu, nx=%4zu\n", tt, yy, xx);
-  
+  if(inp.verbose >= 2) fprintf(inp.log, "info: read nt=%4zu, ny=%4zu, nx=%4zu\n", tt, yy, xx); 
 }
 
 /* ---------------------------------------------------------------------------- */
 
-void writeProfileTYX(size_t tt, size_t yy, size_t xx, double *sp, info &inp)
-{
+void writeProfileTYX(size_t tt, size_t yy, size_t xx, double *sp, info &inp){
   hsize_t    offset[4] = {0,0,0,0}, count[4] = {1,1,1,1};
   count[3] = (hsize_t)inp.nw;
   offset[0] = (hsize_t)tt, offset[1] = (hsize_t)yy, offset[2] = (hsize_t)xx;
@@ -426,10 +431,30 @@ void writeTau1TYX(size_t tt, size_t yy, size_t xx, float *sp, info &inp)
     h5err(inp.myrank, routineName); 
 }
 
+void writeCFuncTYX(size_t tt, size_t yy, size_t xx, double *sp, info &inp)
+{
+  hsize_t    offset[4] = {0,0,0,0}, count[4] = {1,1,1,1};
+  count[3] = (hsize_t)(inp.nw*inp.ndep);
+  offset[0] = (hsize_t)tt, offset[1] = (hsize_t)yy, offset[2] = (hsize_t)xx;
+  
+  const char routineName[] = "writeCFuncTYX";
+
+  /* --- Select hyperslab in file --- */
+  
+  if (( H5Sselect_hyperslab(inp.p.opt_did, H5S_SELECT_SET, offset, NULL, count, NULL) ) < 0)
+    h5err(inp.myrank, routineName);
+
+
+  /* --- Write data --- */
+  
+  if (( H5Dwrite(inp.p.opt_vid[0], H5T_NATIVE_DOUBLE, inp.p.opt_mid, inp.p.opt_did, H5P_DEFAULT, sp) ) < 0) 
+    h5err(inp.myrank, routineName); 
+}
+
 /* ---------------------------------------------------------------------------- */
 
-void initWriteIO(info &inp, double *lambda)
-{
+void initWriteIO(info &inp, double *lambda) {
+  
   hid_t plist;
   const char routineName[] = "initWriteIO";
 
@@ -442,16 +467,14 @@ void initWriteIO(info &inp, double *lambda)
     h5err(inp.myrank, routineName); 
   if (( H5Pclose(plist) ) < 0)  h5err(inp.myrank, routineName); 
 
-  
+  if (( plist = H5Pcreate(H5P_DATASET_CREATE) ) < 0) h5err(inp.myrank, routineName);
 
   /* --- Create dataspace and datasets, data are stored as float32 --- */
   
   hsize_t dims[] = { (hsize_t)inp.nt, (hsize_t)inp.ny, (hsize_t)inp.nx, (hsize_t)inp.nw };
   
   if (( inp.p.did = H5Screate_simple(4, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
-  if (( plist = H5Pcreate(H5P_DATASET_CREATE) ) < 0) h5err(inp.myrank, routineName);
-  
-  
+    
   /* --- Create data space for Stoke_I parameters --- */
 
   if (( inp.p.vid[0] = H5Dcreate(inp.p.fid, "Stokes_I", H5T_NATIVE_DOUBLE,inp.p.did,
@@ -466,6 +489,13 @@ void initWriteIO(info &inp, double *lambda)
     h5err(inp.myrank, routineName);
 
   
+  if ((bool)inp.getContrib) {
+    hsize_t opt_dims[] = { (hsize_t)inp.nt, (hsize_t)inp.ny, (hsize_t)inp.nx, (hsize_t)(inp.nw*inp.ndep) };
+    if (( inp.p.opt_did = H5Screate_simple(4, opt_dims, NULL) ) < 0) h5err(inp.myrank, routineName);
+    if (( inp.p.opt_vid[0] = H5Dcreate(inp.p.fid, "CFunc", H5T_NATIVE_DOUBLE, inp.p.opt_did,H5P_DEFAULT, plist, H5P_DEFAULT)) < 0)
+        h5err(inp.myrank, routineName);
+  }
+
   /* --- Store wavelength array --- */
   
   dims[0] = (hsize_t)inp.nw;
@@ -475,50 +505,62 @@ void initWriteIO(info &inp, double *lambda)
   if (( H5LTset_attribute_string(inp.p.fid, "Wavelength", "units",
                                  "Angstroms") ) < 0) h5err(inp.myrank, routineName);
   
-
-
   /* --- Init memspace and dataspace --- */
 
-  if (( inp.p.mid = H5Screate_simple(1, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
-  if (( inp.p.did = H5Dget_space(inp.p.vid[0]) ) < 0)  h5err(inp.myrank, routineName);
-  if (( inp.p.did = H5Dget_space(inp.p.vid[1]) ) < 0)  h5err(inp.myrank, routineName);
+  if (( inp.p.mid = H5Screate_simple(1, dims, NULL)) < 0) h5err(inp.myrank, routineName);
+  if (( inp.p.did = H5Dget_space(inp.p.vid[0])) < 0)  h5err(inp.myrank, routineName);
+  if (( inp.p.did = H5Dget_space(inp.p.vid[1])) < 0)  h5err(inp.myrank, routineName);
   
+  if ((bool)inp.getContrib) {
+    dims[0] = (hsize_t)(inp.nw*inp.ndep);
+    if (( inp.p.opt_mid = H5Screate_simple(1, dims, NULL)) < 0) h5err(inp.myrank, routineName);
+    if (( inp.p.opt_did = H5Dget_space(inp.p.opt_vid[0])) < 0)  h5err(inp.myrank, routineName);
+  }
+
   if (( H5Pclose(plist) ) < 0)  h5err(inp.myrank, routineName); 
 
 }
 
 /* ---------------------------------------------------------------------------- */
 
-void closeProfile(info &inp)
-{
+void closeProfile(info &inp){
 
   const char routineName[] = "closeProfile";
   
   if (( H5Sclose(inp.p.did) ) < 0) h5err(inp.myrank, routineName); 
   if (( H5Sclose(inp.p.mid) ) < 0) h5err(inp.myrank, routineName);
+
   for (size_t i = 0; i < inp.p.nvid; ++i) {
-      if (( H5Dclose(inp.p.vid[i]) ) < 0) h5err(inp.myrank, routineName); 
+    if (( H5Dclose(inp.p.vid[i]) ) < 0) h5err(inp.myrank, routineName); 
   }
+
+  if ((bool)inp.getContrib) {
+    if (( H5Sclose(inp.p.opt_did) ) < 0)  h5err(inp.myrank, routineName); 
+    if (( H5Sclose(inp.p.opt_mid) ) < 0)  h5err(inp.myrank, routineName);
+    for (size_t i = 0; i < inp.p.opt_nvid; ++i) {
+      if (( H5Dclose(inp.p.opt_vid[i]) ) < 0) h5err(inp.myrank, routineName); 
+    }
+  }
+
   if (( H5Fclose(inp.p.fid) ) < 0) h5err(inp.myrank, routineName); 
 }
 
 /* ---------------------------------------------------------------------------- */
 
-void closeModel(info &inp)
-{
+void closeModel(info &inp){
   const char routineName[] = "closeModel";
     
   if (( H5Sclose(inp.m.did) ) < 0)  h5err(inp.myrank, routineName); 
-  if (( H5Sclose(inp.m.mid) ) < 0)  h5err(inp.myrank, routineName); 
+  if (( H5Sclose(inp.m.mid) ) < 0)  h5err(inp.myrank, routineName);
 
   for(size_t ii=0; ii<13; ii++) if(inp.vdef[ii]) H5Dclose(inp.m.vid[ii]);
+
   H5Fclose(inp.m.fid);
 }
 
 /* ---------------------------------------------------------------------------- */
 
-int readValdLines(string filename, info &input)
-{
+int readValdLines(string filename, info &input){
   
   /* --- Open file --- */
 
@@ -630,3 +672,5 @@ int readValdLines(string filename, info &input)
 
   fprintf(input.log, "info: io, read_lines: read [%d] lines\n", (int)input.lin.size());
 }
+
+/* ---------------------------------------------------------------------------- */
