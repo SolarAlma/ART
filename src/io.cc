@@ -560,7 +560,7 @@ void closeModel(info &inp){
 
 /* ---------------------------------------------------------------------------- */
 
-int readValdLines(string filename, info &input){
+void readValdLines(string filename, info &input){
   
   /* --- Open file --- */
 

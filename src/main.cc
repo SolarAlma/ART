@@ -183,7 +183,7 @@ int main(int narg, char *argv[]) {
   }
 
   readInput(input_file, inp, ((inp.myrank == 0) ? true : false));
-  fprintf(stderr,"log target %d\n", inp.log);
+  fprintf(stderr,"log target %p\n", inp.log);
   MPI_Barrier(MPI_COMM_WORLD);
 
   fprintf(inp.log,"test log %d/%d\n", inp.myrank, inp.nproc);

@@ -86,7 +86,7 @@ eos::witt::witt(std::vector<line> &lines, int n, float *ab, double grav): avweig
 
   /* --- Compute sums --- */
   
-  avweight = 0.0, tabund = 0.0, Ab_others = 0.0, muH = 0.0, rho_from_H;
+  avweight = 0.0, tabund = 0.0, Ab_others = 0.0, muH = 0.0, rho_from_H = 0.0;
   
   for(int ii=0; ii<Nelements; ii++){
     abund[ii] = pow10<double>(abund[ii]);
@@ -616,33 +616,33 @@ template void witt::molecb(double, double*, double*);
 
 /* --------------------------------------------------------------------------------------- */
 
-template <class T> void eos::witt::contOpacity(T temp, T iPgas, T iPe, int nw, double *w, double *opac)
-{
+// template <class T> void eos::witt::contOpacity(T temp, T iPgas, T iPe, int nw, double *w, double *opac)
+// {
 
-  /* --- Some definitions --- */
+//   /* --- Some definitions --- */
   
-  double iT = (double)temp,  TK  = phyc::BK*iT, TKEV = TK / phyc::EV;
-  double HTK  = phyc::HH/TK, TLOG = log(iT), Pgas = (double)iPgas, Pe = (double)iPe;
-  double xna = (Pgas - Pe) / TK, xne = Pe / TK;
+//   double iT = (double)temp,  TK  = phyc::BK*iT, TKEV = TK / phyc::EV;
+//   double HTK  = phyc::HH/TK, TLOG = log(iT), Pgas = (double)iPgas, Pe = (double)iPe;
+//   double xna = (Pgas - Pe) / TK, xne = Pe / TK;
   
   
-  /* --- Get the partial densities of background absorvers --- */
+//   /* --- Get the partial densities of background absorvers --- */
   
-  double n[17] = {}, *scat = new double [nw]();
-  getBackgroundPartials<double>(iT, Pgas, Pe, n);
+//   double n[17] = {}, *scat = new double [nw]();
+//   getBackgroundPartials<double>(iT, Pgas, Pe, n);
 
   
-  /* --- Get background opacities, the cop routines work with partial densities / partition function! --- */
+//   /* --- Get background opacities, the cop routines work with partial densities / partition function! --- */
   
-  cop(iT,  TKEV, TK, HTK, TLOG, xna, xne, w, opac, scat, n[0], n[1], n[2], n[3],
-      n[4], n[5], n[6], n[7], n[8], n[9], n[10], n[11], n[12], n[13], n[14], n[15], n[16],
-      nw, 0, 0); 
+//   cop(iT,  TKEV, TK, HTK, TLOG, xna, xne, w, opac, scat, n[0], n[1], n[2], n[3],
+//       n[4], n[5], n[6], n[7], n[8], n[9], n[10], n[11], n[12], n[13], n[14], n[15], n[16],
+//       nw, 0, 0); 
   
-  delete [] scat;
-}
+//   delete [] scat;
+// }
 
-template void witt::contOpacity(float, float, float, int, double*, double*);
-template void witt::contOpacity(double, double, double, int, double*, double*);
+// template void witt::contOpacity(float, float, float, int, double*, double*);
+// template void witt::contOpacity(double, double, double, int, double*, double*);
 
 
 /* --------------------------------------------------------------------------------------- */

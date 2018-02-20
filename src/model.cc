@@ -146,10 +146,11 @@ void modl::mdepth::fillDensities(info &inp, eoswrap &eos){
       Pe = nne[kk] * tk;
       pgas[kk] = eos.Pg_from_Pe(temp[kk], Pe, NULL);
     } else {
-      exit(-1)
+      exit(-1);
     }
     
-    eos.fill_Species_table((int)kk, (int)ndep, temp[kk], pgas[kk], Pe);
+    eos.fill_Species_table((int)kk, (int)ndep, temp[kk], pgas[kk], Pe); // [TODO] give block_size * nspices
+                                                                        // 
 
     /* --- Do we need to compute the z-scale from ltau500? --- */
     
