@@ -7,8 +7,7 @@
 #  2) use.own
 #  3) local_hdf5
 
-# HDF5_DIR  = /mn/stornext/u3/mikolajs/My_local/hdf5
-HDF5_DIR  = ${HDF5DIR}
+HDF5_DIR  = /mn/stornext/u3/mikolajs/My_local/hdf5
 
 CXX       = mpiicpc
 FC        = mpiifort
