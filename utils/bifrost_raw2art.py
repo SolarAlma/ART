@@ -68,7 +68,7 @@ def main(argv=None):
 		b_Pressure = snap.p * snap.params['u_p'] # now in * (u.dyn/u.cm**2)
 	except:
 		print('[!] Pressure will be read from eostable')
-		eostab = b.Rhoeetab()
+		eostab = bifrost.Rhoeetab()
 		b_Pressure = eostab.tab_interp(b_dens, (snap.e * snap.params['u_e'])/(snap.r * snap.params['u_r']), out='pg') 
 
 	if snap_has_hion:
@@ -78,7 +78,7 @@ def main(argv=None):
 			b_temperature = snap.tg
 		except:
 			print('[!] Temperature will be read from eostable')
-			eostab = b.Rhoeetab()
+			eostab = bifrost.Rhoeetab()
 			b_temperature = eostab.tab_interp(b_dens, (snap.e * snap.params['u_e'])/(snap.r * snap.params['u_r']), out='tg')
 
 	if snap_has_hion:
@@ -87,9 +87,9 @@ def main(argv=None):
 		try:
 			b_xne = snap.ne
 		except:
-			print('[!] Electron temperature will be read from eostable')
-			eostab = b.Rhoeetab()
-			b_xne = eostab.tab_interp(b_dens, (snap.e * snap.params['u_e'])/(snap.r * snap.params['u_r']), out='nel') 
+			print('[!] Electron density number will be read from eostable')
+			eostab = bifrost.Rhoeetab()
+			b_xne = eostab.tab_interp(b_dens, (snap.e * snap.params['u_e'])/(snap.r * snap.params['u_r']), out='ne') 
 
 	dens =  np.einsum('ijk->jik',b_dens)[:,:,::-1] * (u.g/u.cm**3) 
 
