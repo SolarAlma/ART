@@ -24,6 +24,7 @@
 
 using namespace std;
 using namespace modl;
+template<typename T> inline T sq(T const &var){return var*var;}
 
 
 
@@ -201,6 +202,114 @@ void clte::synth_nonpol(mdepth &m, double *syn, eoswrap &eos, double mu, int sol
   /* --- Cleanup --- */
 
   delete [] sf;
+  delete [] opac;
+  
+}
+
+
+
+inline void integrate_alma_pol(int const ndep, int const nw, const double *z, const double *op, const double *temp, double *syn,
+			double mu, double const iNu, const double *B, const double *inc, const double *Ne)
+{
+  
+  constexpr static const double vE = phyc::EE / (2.0 * phyc::PI * phyc::ME * phyc::CC);
+  static const double wP = phyc::EE / sqrt(phyc::PI * phyc::ME);
+  static constexpr const double sig[2] = {-1.0, 1.0};
+  
+  
+  
+  for(int ii=0; ii<2; ++ii){
+    double itau = 0.0;
+    double const iSig = sig[ii];
+    
+    {
+      double const dS = fabs(z[0]-z[1]) / mu;
+      itau += dS * op[0];
+    }
+
+    syn[ii*nw] = 0.0;
+    
+    for(int kk=1; kk<ndep; ++kk){
+      
+      double const vB = vE * B[kk];
+      double const v = sq(wP * sqrt(Ne[kk]) / iNu); 
+      double const u = sq(vB / iNu);
+      
+      double const cosi = cos(inc[kk]);
+      double const sini = sin(inc[kk]);
+       
+       
+       double const D = sq(u) * sq(sq(sini)) + 4*u*sq(1.0-v)*sq(cosi);
+       double const sD = sqrt(D);
+       
+       double const n2 = 1.0 - (2.0*v*(1.0-v)) / (2.0*(1-v) - u*sq(sini) + iSig*sD);
+       if(itau > 15. || n2 < 0.0) break;
+
+       
+       double const Fs = 2.0 * (iSig*sD*(u*sq(sini)+2.0*sq(1.0-v))-sq(u*sq(sini))) /
+	                                (iSig*sD*sq(2.0*(1.0-v)-u*sq(sini)+iSig*sD));
+       
+       double const opSig = op[kk] * (Fs / sqrt(fabs(n2)));
+       
+       double const dS = fabs(z[kk-1]-z[kk]) / mu;
+       double const eps = exp(-itau);
+       
+       syn[ii*nw] += (1.0-exp(-opSig*dS))*temp[kk]*eps;
+       itau += op[kk] * dS; // eps should not include the local contribution, which we add now for next height
+       
+       // cerr<<ii<<" "<<kk<<" "<<itau<<" "<<opSig<<" "<<dS*1.e-5<<endl;
+     } // kk
+   }// ii
+   
+
+   syn[2*nw] = (syn[0]-syn[nw]) / (syn[nw] + syn[0]);
+ }
+
+
+void clte::synth_pol_alma_only(modl::mdepth &m, double *syn, eoswrap &eos, double mu, int solver, bool getContrib)
+{
+
+  /* --- Init vars --- */
+  
+  ndep = m.ndep;
+  double* __restrict__ opac = new double [ndep], *pC;
+  int k0 = m.k0, k1 = m.k1;
+  int  nw = 0;
+
+  for(size_t ir=0; ir<nreg; ir++) nw+= int(reg[ir].nw);
+  
+  /* --- Check dimensions of array to store contribution functions --- */
+  
+  size_t depwavtot = size_t(nw) * size_t(ndep);
+  
+  if((bool)getContrib){
+    if(C.size() != depwavtot) C.resize(depwavtot, 0.0);
+    memset(&C[0], 0, depwavtot*sizeof(double));
+  }
+  
+  
+  /* --- Now integrate emerging intensity for each wavelength --- */
+  
+  for(size_t ir=0; ir<nreg; ir++){
+    for(int w = 0; w < reg[ir].nw; w++){ // Loop lambda
+      size_t idx = w + reg[ir].off;
+      double ilambda = lambda[idx], inu =  reg[ir].nu[w];
+      
+      for(int kk = k0; kk<=k1; kk++){
+	
+        /* --- Get background opacity --- */
+	
+        eos.contOpacity(m.temp[kk], m.nne[kk], kk, 1, &ilambda, &opac[kk]);
+	
+      } // kk
+
+
+      integrate_alma_pol(k1-k0+1, nw, &m.z[k0], &opac[k0], &m.temp[k0], &syn[idx], mu,  inu, &m.B[k0], &m.inc[k0], &m.nne[k0]);
+
+
+    } // w
+  } // ir
+
   delete [] opac;
   
 }
