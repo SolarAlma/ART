@@ -213,7 +213,7 @@ inline void integrate_alma_pol(int const ndep, int const nw, const double *z, co
 {
   
   constexpr static const double vE = phyc::EE / (2.0 * phyc::PI * phyc::ME * phyc::CC);
-  static const double wP = phyc::EE / sqrt(phyc::PI * phyc::ME);
+  static const double vP = phyc::EE / sqrt(phyc::PI * phyc::ME);
   static constexpr const double sig[2] = {-1.0, 1.0};
   
   
@@ -232,7 +232,7 @@ inline void integrate_alma_pol(int const ndep, int const nw, const double *z, co
     for(int kk=1; kk<ndep; ++kk){
       
       double const vB = vE * B[kk];
-      double const v = sq(wP * sqrt(Ne[kk]) / iNu); 
+      double const v = sq(vP * sqrt(Ne[kk]) / iNu); 
       double const u = sq(vB / iNu);
       
       double const cosi = cos(inc[kk]);
