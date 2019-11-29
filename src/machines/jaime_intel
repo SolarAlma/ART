@@ -4,19 +4,18 @@ ifneq (,$(findstring Darwin,$(ARCHF))) #
   export MACOSX_DEPLOYMENT_TARGET
 endif
 
-HDF5_DIR  = /home/jaime/local/parallel_hdf5/
+HDF5_DIR  = /usr/
+CXX       = mpicxx.openmpi
+FC        = mpif90.openmpi
 
-CXX       = mpicxx
-FC        = mpif90
+MPI_CXX   = mpicxx.openmpi
+MPI_FC    = mpif90.openmpi
 
-MPI_CXX   = mpicxx
-MPI_FC    = mpif90
+RTINCLUDE = -I$(HDF5_DIR)/include/hdf5/openmpi/
 
-RTINCLUDE = -I$(HDF5_DIR)/include
-
-OPTFLAGS  = -O3 -xCORE-AVX-I -fp-model source -ipo # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
-F90FLAGS  = -O3 -xCORE-AVX-I -fp-model source -ipo
+OPTFLAGS  = -O0 -g -xCORE-AVX-I -fp-model source  # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
+F90FLAGS  = -O3 -xCORE-AVX-I -fp-model source
 CXXFLAGS  = $(OPTFLAGS) -std=c++11
 
-LDFLAGS   = -lstdc++  -L$(HDF5_DIR)/lib/ -lhdf5 -lhdf5_hl -nofor_main
+LDFLAGS   = -lstdc++  -L$(HDF5_DIR)/lib/x86_64-linux-gnu/hdf5/openmpi/ -lhdf5 -lhdf5_hl -lifcore #-nofor_main
 DEBUG	    =

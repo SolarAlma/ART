@@ -68,8 +68,8 @@ void processData(info &inp)
   /* --- Init Solver --- */
   
   clte atmos(inp.reg, inp.lin);
-  std::vector<double> synthetic;
-  synthetic.resize(atmos.nw);
+  int const nw_alloc = ((inp.solver >= 2)?4*atmos.nw : atmos.nw);
+  std::vector<double> synthetic(nw_alloc,0.0);
 
   /* --- Init output file --- */
 
@@ -101,7 +101,8 @@ void processData(info &inp)
     /* --- get spectrum --- */
 
     atmos.synth_nonpol(m, &synthetic[0], *EoS, inp.mu, inp.solver, (bool)inp.getContrib);
-    
+    if(inp.solver == 2)
+      atmos.synth_pol_alma_only(m, &synthetic[atmos.nw], *EoS, inp.mu, inp.solver, (bool)inp.getContrib);
     //exit(0);
     
     /* --- Write to disk --- */
