@@ -471,7 +471,7 @@ template <class T1, class T2> void vlint(size_t n, T1 *x, T1 *y, size_t n1, T2 *
 
 /* --------------------------------------------------------------------- */
 
-template <class T> void cent_der(size_t n, T *x, T *y, T *yp)
+template <class T> void cent_der(size_t n, const T *x, const T *y, T *yp)
 {
 
   double odx = x[1]-x[0], dx = 0;
