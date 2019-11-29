@@ -67,10 +67,10 @@ struct h5prof{
   int nx, ny, ndep, nt;
   int nvid = 2;
   int opt_nvid = 1;
-  hid_t vid[2]; // Stokes_I + tau = 1
+  hid_t vid[5]; // Stokes_I + tau = 1
   hid_t opt_vid[1]; // Optional values, 1 for Contribution 
   // hid_t vid[4]; 4 Stokes parameters + formation heigt
-  hid_t fid, did, opt_did, mid, opt_mid;
+  hid_t fid, did[5], opt_did, mid, opt_mid;
 };
 
 /* ---------------------------------------------------------------------------- */

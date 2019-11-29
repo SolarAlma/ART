@@ -212,58 +212,63 @@ inline void integrate_alma_pol(int const ndep, int const nw, const double *z, co
 			double mu, double const iNu, const double *B, const double *inc, const double *Ne)
 {
   
-  constexpr static const double vE = phyc::EE / (2.0 * phyc::PI * phyc::ME * phyc::CC);
-  static const double vP = phyc::EE / sqrt(phyc::PI * phyc::ME);
+  static constexpr const double vE = phyc::EE / (2.0 * phyc::PI * phyc::ME * phyc::CC);
+  static const double vP = phyc::EE  / sqrt(phyc::PI * phyc::ME);
   static constexpr const double sig[2] = {-1.0, 1.0};
-  
-  
+
+   double* __restrict__ chi_s = new  double [ndep]; 
   
   for(int ii=0; ii<2; ++ii){
-    double itau = 0.0;
     double const iSig = sig[ii];
     
-    {
-      double const dS = fabs(z[0]-z[1]) / mu;
-      itau += dS * op[0];
-    }
-
     syn[ii*nw] = 0.0;
     
-    for(int kk=1; kk<ndep; ++kk){
+    // --- Compute opacities --- //
+    
+    for(int kk=0; kk<ndep; ++kk){
+      double const v = sq((vP*sqrt(Ne[kk])) / iNu); // = (1/nu * e*sqrt(ne/(me*pi)))**2
+      double const u = sq((vE*B[kk]) / iNu);
+      double const u2 = u*u;
       
-      double const vB = vE * B[kk];
-      double const v = sq(vP * sqrt(Ne[kk]) / iNu); 
-      double const u = sq(vB / iNu);
+      double const cosi2 = sq(cos(inc[kk]));
+      double const sini2 = sq(sin(inc[kk])); 
+      double const v1 = (1.0 - v);
       
-      double const cosi = cos(inc[kk]);
-      double const sini = sin(inc[kk]);
-       
-       
-       double const D = sq(u) * sq(sq(sini)) + 4*u*sq(1.0-v)*sq(cosi);
-       double const sD = sqrt(D);
-       
-       double const n2 = 1.0 - (2.0*v*(1.0-v)) / (2.0*(1-v) - u*sq(sini) + iSig*sD);
-       if(itau > 15. || n2 < 0.0) break;
+      double const D = u2*sq(sini2) + 4.0*u*sq(v1)*cosi2;
+      double const sD = iSig*sqrt(D);
 
-       
-       double const Fs = 2.0 * (iSig*sD*(u*sq(sini)+2.0*sq(1.0-v))-sq(u*sq(sini))) /
-	                                (iSig*sD*sq(2.0*(1.0-v)-u*sq(sini)+iSig*sD));
-       
-       double const opSig = op[kk] * (Fs / sqrt(fabs(n2)));
-       
-       double const dS = fabs(z[kk-1]-z[kk]) / mu;
-       double const eps = exp(-itau);
-       
-       syn[ii*nw] += (1.0-exp(-opSig*dS))*temp[kk]*eps;
-       itau += op[kk] * dS; // eps should not include the local contribution, which we add now for next height
-       
-       // cerr<<ii<<" "<<kk<<" "<<itau<<" "<<opSig<<" "<<dS*1.e-5<<endl;
-     } // kk
-   }// ii
-   
+      // --- cap the refractive index, the approximation is not very accurage in the convection zone --- //
+      
+      double const n2 = std::max(1.0 - ((2.0*v*v1) / (2.0*v1 - u*sini2 + sD)), 0.1);
 
-   syn[2*nw] = (syn[0]-syn[nw]) / (syn[nw] + syn[0]);
- }
+      // --- Anysotropic term due to B --- //
+      
+      double const Fs = 2.0 * (sD * ( u*sini2 + 2.0*sq(v1) ) - u2*sq(sini2)) /
+	                      (sD * sq(2.0*v1 - u*sini2 + sD)                  );
+
+      // --- opacity of each mode --- //
+      
+      chi_s[kk] = op[kk] * (Fs / sqrt(n2));
+      
+      //chi_s[kk] = op[kk] / sq(1+iSig*sqrt(u)*fabs(cos(inc[kk])));
+    } // kk
+
+    // --- integrate, use temp instead of a Source function --- //
+
+     cprof::constant_int(ndep, z, chi_s, temp, syn[ii*nw], mu);
+
+  }// ii
+
+  
+  // --- Polarization degree --- //
+  
+  syn[2*nw] = (syn[0] - syn[nw]) / (syn[nw] + syn[0]);
+
+
+  // --- Clean up --- //
+  
+  delete [] chi_s;
+}
 
 
 void clte::synth_pol_alma_only(modl::mdepth &m, double *syn, eoswrap &eos, double mu, int solver, bool getContrib)
@@ -305,7 +310,6 @@ void clte::synth_pol_alma_only(modl::mdepth &m, double *syn, eoswrap &eos, doubl
 
 
       integrate_alma_pol(k1-k0+1, nw, &m.z[k0], &opac[k0], &m.temp[k0], &syn[idx], mu,  inu, &m.B[k0], &m.inc[k0], &m.nne[k0]);
-
 
     } // w
   } // ir
