@@ -78,8 +78,8 @@ double vac2air(const double alamb){
 
 static const std::string vnames[13] = {
   "ltau500", "z", "temperature", "vz",
-  "vx", "vy", "vturb", "B_str", "B_inc",
-  "B_azi", "Pgas", "dens", "xne"};
+  "vx", "vy", "vturb", "bx", "by",
+  "bz", "Pgas", "dens", "xne"};
 
 /* ---------------------------------------------------------------------------- */
 
@@ -387,6 +387,28 @@ void readAtmosTYX(size_t tt, size_t yy, size_t xx, mdepth &m, info &inp){
     if(inp.vdef[ii])
       readPix(inp.m.vid[ii], inp.m.mid, inp.m.did, &m.buf(ii,0), inp.log);
   }
+
+  // --- convert Bx, By, Bz to actual |B|, inc, azi --- //
+
+  for(int kk=0; kk<inp.ndep; ++kk){
+    double const bx = m.buf(7,kk), by = m.buf(8,kk), bz = m.buf(9,kk);
+    double const B = sqrt(bx*bx + by*by + bz*bz);
+    double const inc = acos(bz/B);
+    double  azi = atan2(by, bx);
+
+    // --- avoid negative values of azimuth --- //
+    
+    azi = ((azi < 0.0) ? azi + 2.0 * phyc::PI : azi);
+
+
+    // --- copy back --- //
+    
+    m.B[kk] = B;
+    m.inc[kk] = inc;
+    m.azi[kk] = azi;
+  }
+  
+  
   if(inp.verbose >= 2) fprintf(inp.log, "info: read nt=%4zu, ny=%4zu, nx=%4zu\n", tt, yy, xx); 
 }
 
@@ -400,15 +422,32 @@ void writeProfileTYX(size_t tt, size_t yy, size_t xx, double *sp, info &inp){
   const char routineName[] = "writeProfileTYX";
 
   /* --- Select hyperslab in file --- */
-  
-  if (( H5Sselect_hyperslab(inp.p.did, H5S_SELECT_SET, offset, NULL, count, NULL) ) < 0)
+  if (( H5Sselect_hyperslab(inp.p.did[0], H5S_SELECT_SET, offset, NULL, count, NULL) ) < 0)
     h5err(inp.myrank, routineName);
 
 
   /* --- Write data --- */
   
-  if (( H5Dwrite(inp.p.vid[0], H5T_NATIVE_DOUBLE, inp.p.mid, inp.p.did, H5P_DEFAULT, sp) ) < 0) 
-    h5err(inp.myrank, routineName); 
+  if (( H5Dwrite(inp.p.vid[0], H5T_NATIVE_DOUBLE, inp.p.mid, inp.p.did[0], H5P_DEFAULT, sp) ) < 0) 
+    h5err(inp.myrank, routineName);
+
+  if(inp.solver>=2){
+    if (( H5Sselect_hyperslab(inp.p.did[2], H5S_SELECT_SET, offset, NULL, count, NULL) ) < 0)
+      h5err(inp.myrank, routineName);
+    if (( H5Dwrite(inp.p.vid[2], H5T_NATIVE_DOUBLE, inp.p.mid, inp.p.did[2], H5P_DEFAULT, &sp[inp.nw*1]) ) < 0) 
+      h5err(inp.myrank, routineName);
+
+    if (( H5Sselect_hyperslab(inp.p.did[3], H5S_SELECT_SET, offset, NULL, count, NULL) ) < 0)
+      h5err(inp.myrank, routineName);
+    if (( H5Dwrite(inp.p.vid[3], H5T_NATIVE_DOUBLE, inp.p.mid, inp.p.did[3], H5P_DEFAULT, &sp[inp.nw*2]) ) < 0) 
+      h5err(inp.myrank, routineName);
+
+    if (( H5Sselect_hyperslab(inp.p.did[4], H5S_SELECT_SET, offset, NULL, count, NULL) ) < 0)
+      h5err(inp.myrank, routineName);
+    if (( H5Dwrite(inp.p.vid[4], H5T_NATIVE_DOUBLE, inp.p.mid, inp.p.did[4], H5P_DEFAULT, &sp[inp.nw*3]) ) < 0) 
+      h5err(inp.myrank, routineName);
+  }
+  
 }
 
 void writeTau1TYX(size_t tt, size_t yy, size_t xx, float *sp, info &inp)
@@ -421,13 +460,13 @@ void writeTau1TYX(size_t tt, size_t yy, size_t xx, float *sp, info &inp)
 
   /* --- Select hyperslab in file --- */
   
-  if (( H5Sselect_hyperslab(inp.p.did, H5S_SELECT_SET, offset, NULL, count, NULL) ) < 0)
+  if (( H5Sselect_hyperslab(inp.p.did[1], H5S_SELECT_SET, offset, NULL, count, NULL) ) < 0)
     h5err(inp.myrank, routineName);
 
 
   /* --- Write data --- */
   
-  if (( H5Dwrite(inp.p.vid[1], H5T_NATIVE_FLOAT, inp.p.mid, inp.p.did, H5P_DEFAULT, sp) ) < 0) 
+  if (( H5Dwrite(inp.p.vid[1], H5T_NATIVE_FLOAT, inp.p.mid, inp.p.did[1], H5P_DEFAULT, sp) ) < 0) 
     h5err(inp.myrank, routineName); 
 }
 
@@ -464,7 +503,8 @@ void initWriteIO(info &inp, double *lambda) {
   if (( plist = H5Pcreate(H5P_FILE_ACCESS )) < 0)  h5err(inp.myrank, routineName); 
   if (( H5Pset_fapl_mpio(plist, inp.comm, inp.info) ) < 0)  h5err(inp.myrank, routineName); 
   if (( inp.p.fid = H5Fcreate(inp.p.filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist) ) < 0)
-    h5err(inp.myrank, routineName); 
+    h5err(inp.myrank, routineName);
+  
   if (( H5Pclose(plist) ) < 0)  h5err(inp.myrank, routineName); 
 
   if (( plist = H5Pcreate(H5P_DATASET_CREATE) ) < 0) h5err(inp.myrank, routineName);
@@ -473,18 +513,37 @@ void initWriteIO(info &inp, double *lambda) {
   
   hsize_t dims[] = { (hsize_t)inp.nt, (hsize_t)inp.ny, (hsize_t)inp.nx, (hsize_t)inp.nw };
   
-  if (( inp.p.did = H5Screate_simple(4, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
-    
+  if (( inp.p.did[0] = H5Screate_simple(4, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
+  if (( inp.p.did[1] = H5Screate_simple(4, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
+
   /* --- Create data space for Stoke_I parameters --- */
 
-  if (( inp.p.vid[0] = H5Dcreate(inp.p.fid, "Stokes_I", H5T_NATIVE_DOUBLE,inp.p.did,
+  if (( inp.p.vid[0] = H5Dcreate(inp.p.fid, "Stokes_I", H5T_NATIVE_DOUBLE,inp.p.did[0],
 				 H5P_DEFAULT, plist, H5P_DEFAULT)) < 0)
     h5err(inp.myrank, routineName);
+  
 
+  // --- init other Stokes pars --- //
+  if(inp.solver >= 2){
+    if (( inp.p.did[2] = H5Screate_simple(4, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
+    if (( inp.p.vid[2] = H5Dcreate(inp.p.fid, "Stokes_Q", H5T_NATIVE_DOUBLE,inp.p.did[2],
+				   H5P_DEFAULT, plist, H5P_DEFAULT)) < 0)
+      h5err(inp.myrank, routineName);
+    
+    if (( inp.p.did[3] = H5Screate_simple(4, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
+    if (( inp.p.vid[3] = H5Dcreate(inp.p.fid, "Stokes_U", H5T_NATIVE_DOUBLE,inp.p.did[3],
+				   H5P_DEFAULT, plist, H5P_DEFAULT)) < 0)
+      h5err(inp.myrank, routineName);
+    
+    if (( inp.p.did[4] = H5Screate_simple(4, dims, NULL) ) < 0) h5err(inp.myrank, routineName);
+    if (( inp.p.vid[4] = H5Dcreate(inp.p.fid, "Stokes_V", H5T_NATIVE_DOUBLE,inp.p.did[4],
+				   H5P_DEFAULT, plist, H5P_DEFAULT)) < 0)
+      h5err(inp.myrank, routineName);
+  }
 
   /* --- Create data space for formation height --- */
 
-  if (( inp.p.vid[1] = H5Dcreate(inp.p.fid, "Tau1", H5T_NATIVE_FLOAT,inp.p.did,
+  if (( inp.p.vid[1] = H5Dcreate(inp.p.fid, "Tau1", H5T_NATIVE_FLOAT,inp.p.did[1],
          H5P_DEFAULT, plist, H5P_DEFAULT)) < 0)
     h5err(inp.myrank, routineName);
 
@@ -508,15 +567,24 @@ void initWriteIO(info &inp, double *lambda) {
   /* --- Init memspace and dataspace --- */
 
   if (( inp.p.mid = H5Screate_simple(1, dims, NULL)) < 0) h5err(inp.myrank, routineName);
-  if (( inp.p.did = H5Dget_space(inp.p.vid[0])) < 0)  h5err(inp.myrank, routineName);
-  if (( inp.p.did = H5Dget_space(inp.p.vid[1])) < 0)  h5err(inp.myrank, routineName);
+
+  /*
+  if (( inp.p.did[0] = H5Dget_space(inp.p.vid[0])) < 0)  h5err(inp.myrank, routineName);
+  if (( inp.p.did[1] = H5Dget_space(inp.p.vid[1])) < 0)  h5err(inp.myrank, routineName);
+
+  if(inp.solver >= 2){
+    if (( inp.p.did[2] = H5Dget_space(inp.p.vid[2])) < 0)  h5err(inp.myrank, routineName);
+    if (( inp.p.did[3] = H5Dget_space(inp.p.vid[3])) < 0)  h5err(inp.myrank, routineName);
+    if (( inp.p.did[4] = H5Dget_space(inp.p.vid[4])) < 0)  h5err(inp.myrank, routineName);
+  }
+  */
   
   if ((bool)inp.getContrib) {
     dims[0] = (hsize_t)(inp.nw*inp.ndep);
     if (( inp.p.opt_mid = H5Screate_simple(1, dims, NULL)) < 0) h5err(inp.myrank, routineName);
-    if (( inp.p.opt_did = H5Dget_space(inp.p.opt_vid[0])) < 0)  h5err(inp.myrank, routineName);
+    //if (( inp.p.opt_did = H5Dget_space(inp.p.opt_vid[0])) < 0)  h5err(inp.myrank, routineName);
   }
-
+  
   if (( H5Pclose(plist) ) < 0)  h5err(inp.myrank, routineName); 
 
 }
@@ -527,13 +595,20 @@ void closeProfile(info &inp){
 
   const char routineName[] = "closeProfile";
   
-  if (( H5Sclose(inp.p.did) ) < 0) h5err(inp.myrank, routineName); 
+  if (( H5Sclose(inp.p.did[0]) ) < 0) h5err(inp.myrank, routineName); 
   if (( H5Sclose(inp.p.mid) ) < 0) h5err(inp.myrank, routineName);
 
   for (size_t i = 0; i < inp.p.nvid; ++i) {
-    if (( H5Dclose(inp.p.vid[i]) ) < 0) h5err(inp.myrank, routineName); 
+    if (( H5Dclose(inp.p.vid[i]) ) < 0) h5err(inp.myrank, routineName);
   }
 
+  if(inp.solver>=2)
+    for(size_t ii=2; ii<5; ++ii){
+      if (( H5Sclose(inp.p.did[ii]) ) < 0) h5err(inp.myrank, routineName); 
+      if (( H5Dclose(inp.p.vid[ii]) ) < 0) h5err(inp.myrank, routineName);
+    }
+
+  
   if ((bool)inp.getContrib) {
     if (( H5Sclose(inp.p.opt_did) ) < 0)  h5err(inp.myrank, routineName); 
     if (( H5Sclose(inp.p.opt_mid) ) < 0)  h5err(inp.myrank, routineName);

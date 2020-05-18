@@ -22,6 +22,8 @@
 
 namespace cprof{  
 
+
+  
   /* --- prototypes --- */
   
   template <class T> inline T planck_nu(const double nu, const T temp);
@@ -33,11 +35,12 @@ namespace cprof{
   template <class T> inline T voigt_complex(const T a, const T v, T &far);
   template <class T> inline T rvoigt(T a, T v);
   
-  inline void getTauNu(int n, double *opac, double *z, double *dtau, int &k0, int &k1, float &z_tau, double mu);
+  inline void getTauNu(int n, const double *opac, const double *z, double *dtau, int &k0, int &k1,
+		       float &z_tau, double mu);
   inline void init_zeeman_components(line_t &line);
-  inline void linear_int(int ndep, double *z, double *op, double *sf, double &syn,
+  inline void linear_int(int ndep, const double *z, const double *op, const double *sf, double &syn,
 		  double mu, float &tau_eq_1);
-  inline void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
+  inline void bezier3_int(int ndep, const double *z, const double *op, const double *sf, double &syn,
 		    double mu, float &tau_eq_1);
 
   
@@ -340,7 +343,7 @@ namespace cprof{
 
   /* ---------------------------------------------------------------------------- */
 
-  inline void getContributionFunction(int n, double *sf, double *tau, double *op, double *C)
+  inline void getContributionFunction(int n, const double *sf, const double *tau, const double *op, double *C)
   {
     
     /* --- Now compute the contribution function C = S * exp(-tau) * alpha --- */
@@ -353,12 +356,12 @@ namespace cprof{
   
   /* ---------------------------------------------------------------------------- */
 
-  void getTauNu(int n, double *opac, double *z, double *dtau, int &k0, int &k1, float &z_tau, double mu)
+  void getTauNu(int n, const double *opac, const double *z, double *dtau, int &k0, int &k1, float &z_tau, double mu)
   {
 
     /* --- Cubic Bezier interpolation of the opacity --- */
     
-    k0 = 0, k1 = n-1;
+    k0 = 1, k1 = n-1;
 
     dtau[0] = 0.;
     double odz = (z[0] - z[1]), oder = (opac[0] - opac[1]) / odz;
@@ -400,12 +403,12 @@ namespace cprof{
 
       /* --- Stop integrating if tau is too large --- */
       
-      if(tau <= 1.e-4) k0 = kk;
-      if(tau <= 100.0) k1 = kk;
-      else{
-	reached = true;
-	break;
-      }
+      // if(tau <= 1.e-5) k0 = kk;
+      //if(tau <= 1000.0) k1 = kk;
+      //else{
+      //	reached = true;
+      //	break;
+      //}
     }
 
     /* --- integrate last point? --- */
@@ -426,9 +429,42 @@ namespace cprof{
     }
   }
   
-/* ---------------------------------------------------------------------------- */
+  /* ---------------------------------------------------------------------------- */
+  
+  inline void constant_int(int ndep, const double *z, const double *chi_s, const double *sf, double &syn,
+		    double mu)
+  {
+    double* __restrict__ tau = new double [ndep];
 
-  void linear_int(int ndep, double *z, double *op, double *sf, double &syn,
+    // --- Tau scale --- //
+    
+    tau[0] = 1.e-10;
+    long double itau = 1.e-10;
+    
+    for(int kk=1; kk<(ndep-1); ++kk){
+      double const dz = 0.5*(z[kk-1] - z[kk+1]) / mu;
+      itau+= chi_s[kk] * dz;
+      tau[kk] = static_cast<double>(itau);
+    }
+    
+    tau[ndep-1] = chi_s[ndep-1]*(z[ndep-2]-z[ndep-1]);
+
+    // --- Integrate, constant grid integration, described in Loukitcheva's paper --- //
+    
+    long double I = 0.0;
+    for(int kk=1; kk<(ndep-1); ++kk){
+      const long double dz = 0.5*(z[kk-1] - z[kk+1]) / mu;
+      I += ((1.0 - exp(-chi_s[kk] * dz)) * exp(-tau[kk-1])) * sf[kk];
+      if(tau[kk] > 150.) break;
+    }
+
+    syn = static_cast<double>(I);
+
+    delete [] tau;
+  }
+  /* ---------------------------------------------------------------------------- */
+  
+  void linear_int(int ndep, const double *z, const double *op, const double *sf, double &syn,
 		  double mu, float &tau_eq_1, double *C)
 {
 
@@ -443,7 +479,7 @@ namespace cprof{
   
   /* --- Init emerging intensity --- */
   
-  syn = sf[kdep] - (sf[kdep-1] - sf[kdep]) / dtau[kdep];
+  syn = sf[kdep];// - (sf[kdep-1] - sf[kdep]) / dtau[kdep];
 
 
   /* --- Integrate linearly --- */
@@ -491,7 +527,7 @@ namespace cprof{
 
 /* ---------------------------------------------------------------------------- */
 
-void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
+void bezier3_int(int ndep, const double *z, const double *op, const double *sf, double &syn,
 			double mu, float &tau_eq_1, double *C)
 {
   
@@ -506,7 +542,7 @@ void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
   
   /* --- Init the intensity with the value of the source function at the lowest point --- */
   
-  syn = sf[kdep] - (sf[kdep-1] - sf[kdep]) / dtau[kdep];
+  syn = sf[kdep];// - (sf[kdep-1] - sf[kdep]) / dtau[kdep];
 
 
   /* --- Get the derivatives of the source function with heigt --- */
@@ -532,7 +568,7 @@ void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
     double dt03 = dt / 3.0;
     double eps, alp, bet, gam, mu;
     //
-    if(dt >= 1.e-3){
+    if(dt >= 1.e-2){
       //
       eps = exp(-dt);
       //
@@ -571,7 +607,7 @@ void bezier3_int(int ndep, double *z, double *op, double *sf, double &syn,
   delete [] tau;
 
  }
-  
+
 };
 
 #endif

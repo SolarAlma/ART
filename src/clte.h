@@ -42,7 +42,8 @@ class clte{
   double vac2air(double alamb);
   double air2vac(double alamb);
   void synth_nonpol(modl::mdepth &m, double *syn, eoswrap &eos, double mu, int solver, bool getContrib);
-
+  void synth_pol_alma_only(modl::mdepth &m, double *syn, eoswrap &eos, double mu, int solver, bool getContrib);
+  
   void delobez3_int(int ndep, double *z, double *op, double *sf, double &syn, double mu, float &tau_eq_1);
   void linear_int(int ndep, double *z, double *op, double *sf, double &syn,double mu, float &tau_eq_1);
   double lte_opac(double temp, double n_u, double gf, double elow, double nu0);
