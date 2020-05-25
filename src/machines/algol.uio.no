@@ -7,8 +7,7 @@
 #  2) use.own
 #  3) local_hdf5
 
-# HDF5_DIR  = /mn/stornext/u3/mikolajs/My_local/hdf5
-HDF5_DIR  = ${HDF5DIR}
+HDF5_DIR  = /mn/stornext/u3/mikolajs/My_local/hdf5
 
 CXX       = mpiicpc
 FC        = mpiifort
@@ -18,13 +17,13 @@ MPI_FC    = mpiifort
 
 RTINCLUDE = -I$(HDF5_DIR)/include
 
-OPTFLAGS  = -O3 -xHost # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
-F90FLAGS  = -O3 -xHost -fp-model source
+OPTFLAGS  = -fp-model precise -no-fma  -g -traceback -fp-trap=invalid # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
+F90FLAGS  = -fp-model precise -no-fma
 
 # OPTFLAGS  = -O2 -g -traceback # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
 # F90FLAGS  = -O2 -g -traceback -fp-model source
 
 CXXFLAGS  = $(OPTFLAGS) -std=c++11
 
-LDFLAGS   = -lstdc++ -lhdf5 -lhdf5_hl -lszip-shared -nofor_main 
+LDFLAGS   = -g -traceback -lstdc++ -lhdf5 -lhdf5_hl -lszip-shared -nofor_main 
 DEBUG	    =

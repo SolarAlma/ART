@@ -480,6 +480,7 @@ template <class T> void cent_der(size_t n, const T *x, const T *y, T *yp)
 
   for(size_t ii=1;ii<(n-1); ii++){
     dx = x[ii+1] - x[ii];
+    if (dx == 0.0) dx = 1.0e-22;
     der = (y[ii+1] - y[ii]) / dx;
 
     if(der*oder > 0.0){
