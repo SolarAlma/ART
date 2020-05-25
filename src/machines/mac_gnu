@@ -2,12 +2,12 @@
 
 # HDF5_DIR  = #setup by module 
 
-OPTFLAGS  = -mtune=native -O3 
+OPTFLAGS  = -O2 -g -fbacktrace -ffp-contract=off -fno-fast-math -ffpe-trap=invalid,overflow -gfull 
 
-CXX       = mpic++
+CXX       = mpicxx
 FC        = mpifort
 
-MPI_CXX   = mpic++
+MPI_CXX   = mpicxx
 MPI_FC    = mpif90
 
 RTINCLUDE = 
