@@ -390,23 +390,23 @@ void readAtmosTYX(size_t tt, size_t yy, size_t xx, mdepth &m, info &inp){
 
   // --- convert Bx, By, Bz to actual |B|, inc, azi --- //
 
-  for(int kk=0; kk<inp.ndep; ++kk){
-    double const bx = m.buf(7,kk), by = m.buf(8,kk), bz = m.buf(9,kk);
-    double const B = sqrt(bx*bx + by*by + bz*bz);
-    double const inc = acos(bz/B);
-    double  azi = atan2(by, bx);
+ // for(int kk=0; kk<inp.ndep; ++kk){
+  //  double const bx = m.buf(7,kk), by = m.buf(8,kk), bz = m.buf(9,kk);
+  //  double const B = sqrt(bx*bx + by*by + bz*bz);
+  //  double const inc = acos(bz/B);
+  //  double  azi = atan2(by, bx);
 
     // --- avoid negative values of azimuth --- //
     
-    azi = ((azi < 0.0) ? azi + 2.0 * phyc::PI : azi);
+//    azi = ((azi < 0.0) ? azi + 2.0 * phyc::PI : azi);
 
 
     // --- copy back --- //
     
-    m.B[kk] = B;
-    m.inc[kk] = inc;
-    m.azi[kk] = azi;
-  }
+ //   m.B[kk] = B;
+ //   m.inc[kk] = inc;
+ //   m.azi[kk] = azi;
+ // }
   
   
   if(inp.verbose >= 2) fprintf(inp.log, "info: read nt=%4zu, ny=%4zu, nx=%4zu\n", tt, yy, xx); 

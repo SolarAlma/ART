@@ -371,7 +371,9 @@ namespace cprof{
     
     for(int kk=1; kk<(n-1);kk++){
       int ku = kk-1, kd=kk+1;
-      dz = (z[kk]-z[kd]), der = (opac[kk]-opac[kd])/dz;
+      dz = (z[kk]-z[kd]); 
+      if (dz == 0.0) dz = 1.0e-22;
+      der = (opac[kk]-opac[kd])/dz;
 
       
       if(oder*der > 0.0){
