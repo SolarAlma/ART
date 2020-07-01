@@ -1,0 +1,25 @@
+# Testes with:
+#
+# Currently Loaded Modulefiles:
+#  1) Intel_parallel_studio/2020/1.102   2) hdf5/Intel/1.10.1
+
+HDF5_DIR  = /astro/local/hdf5/1.10.1/intel
+
+CXX       = mpiicpc
+FC        = mpiifort
+
+MPI_CXX   = mpiicpc
+MPI_FC    = mpiifort
+
+RTINCLUDE = -I$(HDF5_DIR)/include
+
+OPTFLAGS  = -xHost -fp-model precise -no-fma  # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
+F90FLAGS  = -xHost -fp-model precise 
+
+# OPTFLAGS  = -O2 -g -traceback # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
+# F90FLAGS  = -O2 -g -traceback -fp-model source
+
+CXXFLAGS  = $(OPTFLAGS) -std=c++11
+
+LDFLAGS   = -g -traceback -lstdc++ -L$(HDF5_DIR)/lib/ -lhdf5 -lhdf5_hl -nofor_main 
+DEBUG	  =
