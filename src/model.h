@@ -3,7 +3,6 @@
 
 
 #include "cmemt2.h"
-#include "ceos.h"
 #include "witt.h"
 #include "eoswrap.h"
 
@@ -13,19 +12,19 @@ namespace modl{
     cgs = 0,
     si = 1
   };
-  
-  
+
+
   class mdepth{
   private:
     bool allocated;
   public:
     size_t ndep;
     int k0, k1;
-    munit units;	
+    munit units;
     mat<double> buf;
     double *temp, *vz, *vx, *vy, *B, *vturb, *inc,
       *azi, *pgas, *rho, *nne, *z, *ltau;
-    
+
 
     /* ---- Prototypes ---- */
 
@@ -40,7 +39,7 @@ namespace modl{
     void getTcut(info &inp);
     // void fillDensities_witt(info &inp, witt &eos);
   };
-  
+
 };
 
 #endif

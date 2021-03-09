@@ -16,38 +16,33 @@ endif
 ### filling missing parts
 
 MPI_CXX   ?= mpic++
-MPI_FC    ?= mpif90
 HDF5_DIR  ?=
 RTINCLUDE ?=
 OPTFLAGS  ?= -O2
-F90FLAGS  ?= $(OPTFLAGS)
-CXXFLAGS  ?= $(OPTFLAGS) -std=c++11 
-LDFLAGS   ?= -lhdf5 -lhdf5_hl -lz 
+CXXFLAGS  ?= $(OPTFLAGS) -std=c++11
+LDFLAGS   ?= -lhdf5 -lhdf5_hl -lz
 DEBUG     ?=
 
 INFO      += compiler
 
 ### define object files list
 
-OFILES = eos_math_special.o eos_eqns.o eos.o cop.o  eoswrap.o ceos.o witt.o model.o io.o clte.o main.o
+OFILES = cop.o  eoswrap.o witt.o model.o io.o clte.o main.o
 
 
 ### compilation
 
-.SUFFIXES: .cc .f .o
+.SUFFIXES: .cc .o
 .PHONY: clean
-
-.f.o:
-	$(MPI_FC) $(F90FLAGS) $(DEBUG) -c $< -o $@
 
 %.o: %.cc *.h
 	$(MPI_CXX) $(CXXFLAGS) $(DEBUG) $(RTINCLUDE) -c $< -o $@
 
 compile: $(INFO) $(OFILES)
-	$(MPI_FC) $(F90FLAGS) $(RTINCLUDE) -o RTma.x $(OFILES) $(LDFLAGS)
+	$(MPI_CXX) $(RTINCLUDE) -o RTma.x $(OFILES) $(LDFLAGS)
 
 test: $(INFO) $(TFILES)
-	$(MPI_FC) $(F90FLAGS) $(RTINCLUDE) -o test.x $(TFILES) $(LDFLAGS) 
+	$(MPI_CXX) $(RTINCLUDE) -o test.x $(TFILES) $(LDFLAGS)
 
 clean:
 	rm -f *.o *.mod
@@ -67,11 +62,9 @@ no_machine:
 
 compiler:
 	@echo " MPI_CXX      = " $(MPI_CXX)
-	@echo " MPI_FC       = " $(MPI_FC)
-	@echo " HDF5_DIR     = " $(HDF5_DIR)	
+	@echo " HDF5_DIR     = " $(HDF5_DIR)
 	@echo " RTINCLUDE    = " $(RTINCLUDE)
 	@echo " OPTFLAGS     = " $(OPTFLAGS)
-	@echo " F90FLAGS     = " $(F90FLAGS)
 	@echo " CXXFLAGS     = " $(CXXFLAGS)
 	@echo " LDFLAGS      = " $(LDFLAGS)
 	@echo " DEBUG        = " $(DEBUG)
