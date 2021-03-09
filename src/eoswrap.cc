@@ -96,7 +96,7 @@ void eoswrap::fill_Species_table(int kk, int ndep, double temp, double Pg, doubl
   /* --- Fill species --- */
 
   
-  double tkb = temp * phyc::BK, xna = (Pg-Pe)/tkb, xne = Pe/tkb;
+  double tkb = std::max(temp * phyc::BK,1.0e-22), xna = (Pg-Pe)/tkb, xne = Pe/tkb;
   double tmp[6], tmp1[6];
   
   for(size_t ii = 0; ii<nspec; ii++){
