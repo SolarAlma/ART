@@ -1,0 +1,19 @@
+# Setup for MacBook Pro with OsX Sierra + PGI 16.0.1 compilers with build in MPICH 
+
+# HDF5_DIR  = #setup by module 
+
+OPTFLAGS  = -O2 -xHost 
+
+CXX       = mpic++
+FC        = mpifort
+
+MPI_CXX   = mpic++
+MPI_FC    = mpif90
+
+RTINCLUDE = 
+F90FLAGS  = $(OPTFLAGS) 
+CXXFLAGS  = $(OPTFLAGS) -fp-model=precise -std=c++11 -I/usr/local/opt/hdf5-parallel/include
+
+LDFLAGS   = -lstdc++ -lc++ -L/usr/local/opt/hdf5-parallel/lib -lhdf5 -lhdf5_hl
+DEBUG	    =
+
