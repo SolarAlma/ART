@@ -46,18 +46,35 @@ using namespace modl;
 void processData(info &inp)
 {
 
+  static const std::string vnames[13] = {
+  "ltau500", "z", "temperature", "vz",
+  "vx", "vy", "vturb", "bx", "by",
+  "bz", "Pgas", "dens", "xne"};
+
   /* --- open atmos file and init dimensions --- */
 
   initReadIO(inp);
   bool master = (inp.myrank == 0) ? true : false;
 
-
+  for (int i = 0; i < inp.vdef.size(); ++i) {
+    std::string tag;
+    if (i == 10 && inp.vdef[12]) {
+      tag = " will be calculated from xne (electron density)";
+    } else if (i == 10 || i == 12) {
+      tag = " will be calculated from EOS";
+    } else {
+      tag = " ... ";
+    }
+    std::cout << "[I/O] " << vnames[i] << (inp.vdef[i] ? " read from input model " : tag) << std::endl;
+  }
 
   /* --- Init EOS  --- */
 
   eoswrap *EoS = NULL;
-  if(inp.eos_type == 0) EoS = new eos::witt(inp.lin, 0, NULL, inp.gravity);
-  else{
+  if(inp.eos_type == 0) {
+    if (master) std::cout << "[EOS] Wittmann" << std::endl;
+    EoS = new eos::witt(inp.lin, 0, NULL, inp.gravity);
+  } else{
     fprintf(inp.log,"main: ERROR, accepted values for eos_type are: [witt]\n");
     exit(0);
   }
