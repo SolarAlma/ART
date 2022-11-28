@@ -10,6 +10,6 @@ MPI_CXX   = mpicxx
 RTINCLUDE =
 CXXFLAGS  = $(OPTFLAGS) -std=c++11 -I/opt/homebrew/include/
 
-LDFLAGS   = -lstdc++ -lc++ -L/opt/homebrew/lib -lhdf5 -lhdf5_hl
+LDFLAGS   = -L/opt/homebrew/lib -lhdf5 -lhdf5_hl
 DEBUG	    = -g
 
