@@ -27,6 +27,7 @@
 #include <iostream>
 #include <cstdio>
 #include <vector>
+#include <iomanip>
 #include <mpi.h>
 //
 #include "cmemt2.h"
@@ -56,29 +57,30 @@ void processData(info &inp)
   initReadIO(inp);
   bool master = (inp.myrank == 0) ? true : false;
 
+  if (master) std::cout << "info:" << std::endl;
   for (int i = 0; i < inp.vdef.size(); ++i) {
     std::string tag;
     if (i == 10 && inp.vdef[12]) {
-      tag = " will be calculated from xne (electron density)";
+      tag = " will be calculated from 'xne' (electron density)";
     } else if (i == 10 || i == 12) {
       tag = " will be calculated from EOS";
     } else {
-      tag = " ... ";
+      tag = " .... not present";
     }
-    std::cout << "[I/O] " << vnames[i] << (inp.vdef[i] ? " read from input model " : tag) << std::endl;
+    std::cout << "info: ~~~ " << "'" << std::setw(11) << vnames[i] << "'" << (inp.vdef[i] ? " from input model " : tag) << std::endl;
   }
+  if (master) std::cout << "info:" << std::endl;
 
   /* --- Init EOS  --- */
 
   eoswrap *EoS = NULL;
   if(inp.eos_type == 0) {
-    if (master) std::cout << "[EOS] Wittmann" << std::endl;
+    if (master) std::cout << "info: EOS module type: 'witt' (Wittmann)" << std::endl;
     EoS = new eos::witt(inp.lin, 0, NULL, inp.gravity);
   } else{
     fprintf(inp.log,"main: ERROR, accepted values for eos_type are: [witt]\n");
     exit(0);
   }
-
 
   /* --- Init Solver --- */
 
@@ -89,8 +91,6 @@ void processData(info &inp)
   /* --- Init output file --- */
 
   initWriteIO(inp, &atmos.lambda[0]);
-
-
 
   /* --- loop pixels and synthesize --- */
 

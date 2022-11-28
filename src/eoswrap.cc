@@ -27,18 +27,16 @@ inline double isaha(const double t, const double xne, const double u0, const dou
 /* --------------------------------------------------------------------------------------- */
 
 
-void eoswrap::init_Species_table(std::vector<line> &lines)
-{
+void eoswrap::init_Species_table(std::vector<line> &lines) {
 
   /* --- Init background absorvers --- */
   
   spectab.resize(1), spectab[0].resize(10);
   
   spectab[0][0].anum = 0,  spectab[0][1].anum = 1, spectab[0][2].anum = 5,
-    spectab[0][3].anum = 12, spectab[0][4].anum = 13,
-    spectab[0][5].anum = 19, spectab[0][6].anum = 11, spectab[0][7].anum = 25,
-    spectab[0][8].anum = 6, spectab[0][9].anum = 7;
-
+  spectab[0][3].anum = 12, spectab[0][4].anum = 13,
+  spectab[0][5].anum = 19, spectab[0][6].anum = 11, spectab[0][7].anum = 25,
+  spectab[0][8].anum = 6, spectab[0][9].anum = 7;
   
   /* --- add elements from lines --- */
 
@@ -197,6 +195,4 @@ void eoswrap::contOpacity(double T, double xne, int kk, int nw, double *w, doubl
       spectab[kk][8].n_tot[0], // N
       spectab[kk][9].n_tot[0], // O
       nw, nlines, ntotallist);
-
-
 }
