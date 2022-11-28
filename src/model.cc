@@ -138,12 +138,12 @@ void modl::mdepth::fillDensities(info &inp, eoswrap &eos){
     if(inp.vdef[10]){// Pgas
       if(!inp.vdef[12]) nne[kk] = eos.Pe_from_Pg(temp[kk], pgas[kk], NULL) / tk;
       Pe = nne[kk] * tk; // nne is defined
-    }else if(inp.vdef[11]){  // rho
-      pgas[kk] = eos.Pg_from_Rho(temp[kk], rho[kk], Pe); // Pe is given as output
-      if(!inp.vdef[12]) nne[kk] = Pe / tk;
     }else if(inp.vdef[12]){ // only nne given ?
       Pe = nne[kk] * tk;
       pgas[kk] = eos.Pg_from_Pe(temp[kk], Pe, NULL);
+    }else if(inp.vdef[11]){  // rho
+      pgas[kk] = eos.Pg_from_Rho(temp[kk], rho[kk], Pe); // Pe is given as output
+      if(!inp.vdef[12]) nne[kk] = Pe / tk;
     } else {
       exit(-1);
     }
