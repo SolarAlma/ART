@@ -114,7 +114,6 @@ void modl::mdepth::to_cgs()
 
 void modl::mdepth::fillDensities(info &inp, eoswrap &eos){
 
-
   /* --- Some checks --- */
 
   double otau=0, tau=0, kappa, kappa_old, na, ne, Pe;
@@ -126,31 +125,45 @@ void modl::mdepth::fillDensities(info &inp, eoswrap &eos){
 
   getTcut(inp);
 
-
   /* --- Fill densities --- */
 
-  for(size_t kk=k0; kk<=k1; kk++){
+  for (size_t kk=k0; kk<=k1; ++kk) {
 
     /* --- Fill densities using the EOS --- */
 
+    // 01: "ltau500",
+    // 02: "z",
+    // 03: "temperature",
+    // 04: "vz",
+    // 05: "vx",
+    // 06: "vy",
+    // 07: "vturb",
+    // 08: "bx",
+    // 08: "by",
+    // 09: "bz",
+    // 10: "Pgas",
+    // 11: "dens",
+    // 12: "xne"
+
     double tk = temp[kk] * phyc::BK;
 
-    if(inp.vdef[10]){// Pgas
-      if(!inp.vdef[12]) nne[kk] = eos.Pe_from_Pg(temp[kk], pgas[kk], NULL) / tk;
+    if (inp.vdef[10]){ // Pgas is provided
+      if (!inp.vdef[12]) { // if no electron density {nee} get it from: ( Pe, from Pg, nne from Pe)
+        nne[kk] = eos.Pe_from_Pg(temp[kk], pgas[kk], NULL) / tk;
+      }
       Pe = nne[kk] * tk; // nne is defined
-    }else if(inp.vdef[12]){ // only nne given ?
+    } else if (inp.vdef[12]) { // only {nne} given
       Pe = nne[kk] * tk;
-      pgas[kk] = eos.Pg_from_Pe(temp[kk], Pe, NULL);
-    }else if(inp.vdef[11]){  // rho
+      pgas[kk] = eos.Pg_from_Pe(temp[kk], Pe, NULL); // Pg From Electron density
+    } else if (inp.vdef[11]){  // no electron density and no Pg, calculate everything from rho
       pgas[kk] = eos.Pg_from_Rho(temp[kk], rho[kk], Pe); // Pe is given as output
-      if(!inp.vdef[12]) nne[kk] = Pe / tk;
+      nne[kk] = Pe / tk;
     } else {
       exit(-1);
     }
 
     eos.fill_Species_table((int)kk, (int)ndep, temp[kk], pgas[kk], Pe); // [TODO] give block_size * nspices
                                                                         //
-
     /* --- Do we need to compute the z-scale from ltau500? --- */
 
     // if(!inp.vdef[1] && inp.vdef[0]){
@@ -159,8 +172,6 @@ void modl::mdepth::fillDensities(info &inp, eoswrap &eos){
     //   else z[kk] = z[kk-1] - 2.0 * (tau-otau) / (kappa-kappa_old);
     // }
   }
-
-
 }
 
 /* ---------------------------------------------------------------------------- */

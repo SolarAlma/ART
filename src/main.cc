@@ -48,9 +48,20 @@ void processData(info &inp)
 {
 
   static const std::string vnames[13] = {
-  "ltau500", "z", "temperature", "vz",
-  "vx", "vy", "vturb", "bx", "by",
-  "bz", "Pgas", "dens", "xne"};
+  /*01*/  "ltau500",
+  /*02*/  "z",
+  /*03*/  "temperature",
+  /*04*/  "vz",
+  /*05*/  "vx",
+  /*06*/  "vy",
+  /*07*/  "vturb",
+  /*08*/  "bx",
+  /*08*/  "by",
+  /*09*/  "bz",
+  /*10*/  "Pgas",
+  /*11*/  "dens",
+  /*12*/  "xne"
+  };
 
   /* --- open atmos file and init dimensions --- */
 
