@@ -1,12 +1,1 @@
-@software{ART_Code_1.1,
-  author       = {Jaime de la Cruz Rodríguez and
-                  Mikolaj Szydlarski and
-                  Sven},
-  doi          = {10.5281/zenodo.4604825},
-  title        = {SolarAlma/ART: Release citable version of ART},
-  month        = {3},
-  year         = {2021},
-  publisher    = {Zenodo},
-  version      = {v1.1},
-  url          = {https://doi.org/10.5281/zenodo.4604825}
-}
+Jaime de la Cruz Rodríguez, Mikolaj Szydlarski, & Sven Wedemeyer. (2021). ART: Advanced (and fast!) Radiative Transfer code for Solar Physics. (v1.1). Zenodo. https://doi.org/10.5281/zenodo.4604825
