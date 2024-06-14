@@ -1,25 +1,20 @@
-# Testes with:
-#
-# Currently Loaded Modulefiles:
-#  1) Intel_parallel_studio/2020/1.102   2) hdf5/Intel/1.10.1
+# Testes with (14.06.2024):
+# module load intel/oneapi mpi/latest compiler/latest hdf5/Intel/1.14.3
 
-HDF5_DIR  = /astro/local/hdf5/1.10.1/intel
+HDF5_DIR  = /astro/local/hdf5/rhel9/1.14.3/intel/
 
-CXX       = mpiicpc
-FC        = mpiifort
+CXX       = mpiicpx
+FC        = mpiifx 
 
-MPI_CXX   = mpiicpc
-MPI_FC    = mpiifort
+MPI_CXX   = mpiicpx
+MPI_FC    = mpiifx
 
 RTINCLUDE = -I$(HDF5_DIR)/include
 
-OPTFLAGS  = -O2 -fp-model precise -no-fma  # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
-F90FLAGS  = -O2 -fp-model precise 
+OPTFLAGS  = -O3 -fp-model precise -no-fma
+F90FLAGS  = -O3 -fp-model precise 
 
-# OPTFLAGS  = -O2 -g -traceback # CERTAIN VERSIONS OF IFORT BREAK THE EOS WITH AVX2 
-# F90FLAGS  = -O2 -g -traceback -fp-model source
+CXXFLAGS  = $(OPTFLAGS) -std=c++11 -Wno-vla-cxx-extension
 
-CXXFLAGS  = $(OPTFLAGS) -std=c++11
-
-LDFLAGS   = -g -traceback -lstdc++ -L$(HDF5_DIR)/lib/ -lhdf5 -lhdf5_hl  
-DEBUG	  =
+LDFLAGS   = -lstdc++ -L$(HDF5_DIR)/lib/ -lhdf5 -lhdf5_hl  
+DEBUG	    = -g
